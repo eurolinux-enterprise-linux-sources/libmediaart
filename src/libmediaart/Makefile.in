@@ -143,19 +143,18 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(girdir)" \
 	"$(DESTDIR)$(libmediaartincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-libmediaart_@LIBMEDIAART_API_VERSION@_la_DEPENDENCIES =  \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am__libmediaart_@LIBMEDIAART_API_VERSION@_la_SOURCES_DIST = cache.c \
-	cache.h extract.c extract.h extractgeneric.h storage.c \
-	storage.h marshal.c marshal.h extractpixbuf.c extractqt.cpp \
+am__libmediaart_@LIBMEDIAART_API_VERSION@_la_SOURCES_DIST = marshal.c \
+	marshal.h cache.c cache.h extract.c extract.h extractgeneric.h \
+	storage.c storage.h extractpixbuf.c extractqt.cpp \
 	extractdummy.c
-am__objects_1 = cache.lo extract.lo storage.lo
-@HAVE_GDKPIXBUF_TRUE@am__objects_2 = extractpixbuf.lo
-@HAVE_GDKPIXBUF_FALSE@@HAVE_QT_TRUE@am__objects_3 = extractqt.lo
-@HAVE_GDKPIXBUF_FALSE@@HAVE_QT_FALSE@am__objects_4 = extractdummy.lo
+am__objects_1 = marshal.lo
+am__objects_2 = cache.lo extract.lo storage.lo
+@HAVE_GDKPIXBUF_TRUE@am__objects_3 = extractpixbuf.lo
+@HAVE_GDKPIXBUF_FALSE@@HAVE_QT_TRUE@am__objects_4 = extractqt.lo
+@HAVE_GDKPIXBUF_FALSE@@HAVE_QT_FALSE@am__objects_5 = extractdummy.lo
 am_libmediaart_@LIBMEDIAART_API_VERSION@_la_OBJECTS =  \
-	$(am__objects_1) marshal.lo $(am__objects_2) $(am__objects_3) \
-	$(am__objects_4)
+	$(am__objects_1) $(am__objects_2) $(am__objects_3) \
+	$(am__objects_4) $(am__objects_5)
 libmediaart_@LIBMEDIAART_API_VERSION@_la_OBJECTS =  \
 	$(am_libmediaart_@LIBMEDIAART_API_VERSION@_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -310,6 +309,7 @@ LIBMEDIAART_BACKEND = @LIBMEDIAART_BACKEND@
 LIBMEDIAART_BINARY_AGE = @LIBMEDIAART_BINARY_AGE@
 LIBMEDIAART_BINARY_VERSION = @LIBMEDIAART_BINARY_VERSION@
 LIBMEDIAART_CFLAGS = @LIBMEDIAART_CFLAGS@
+LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS = @LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS@
 LIBMEDIAART_INTERFACE_AGE = @LIBMEDIAART_INTERFACE_AGE@
 LIBMEDIAART_LIBS = @LIBMEDIAART_LIBS@
 LIBMEDIAART_MAJOR_VERSION = @LIBMEDIAART_MAJOR_VERSION@
@@ -423,7 +423,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = \
 	$(BUILD_CFLAGS) \
-	$(LIBMEDIAART_CFLAGS)
+	$(LIBMEDIAART_CFLAGS) \
+	$(LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS)
 
 
 #
@@ -432,6 +433,10 @@ AM_CPPFLAGS = \
 lib_LTLIBRARIES = libmediaart-@LIBMEDIAART_API_VERSION@.la
 libmediaartdir = $(libdir)/libmediaart-$(LIBMEDIAART_API_VERSION)/
 libmediaartincludedir = $(includedir)/libmediaart-$(LIBMEDIAART_API_VERSION)/libmediaart/
+libmediaart_marshal_sources = \
+	marshal.c \
+	marshal.h
+
 libmediaart_sources = \
 	cache.c \
 	cache.h \
@@ -443,27 +448,30 @@ libmediaart_sources = \
 
 libmediaartinclude_HEADERS = \
 	mediaart.h \
+	mediaart-macros.h \
 	cache.h \
 	extract.h \
 	extractgeneric.h
 
+libmediaart_@LIBMEDIAART_API_VERSION@_la_DEPENDENCIES = $(libmediaart_marshal_sources)
 libmediaart_@LIBMEDIAART_API_VERSION@_la_SOURCES =  \
-	$(libmediaart_sources) marshal.c marshal.h $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+	$(libmediaart_marshal_sources) $(libmediaart_sources) \
+	$(am__append_1) $(am__append_2) $(am__append_3)
 @HAVE_GDKPIXBUF_FALSE@@HAVE_QT_FALSE@libmediaart_@LIBMEDIAART_API_VERSION@_la_LINK = $(LINK) $(libmediaart_@LIBMEDIAART_API_VERSION@_la_LDFLAGS)
 @HAVE_GDKPIXBUF_FALSE@@HAVE_QT_TRUE@libmediaart_@LIBMEDIAART_API_VERSION@_la_LINK = $(CXXLINK) $(libmediaart_@LIBMEDIAART_API_VERSION@_la_LDFLAGS)
 @HAVE_GDKPIXBUF_TRUE@libmediaart_@LIBMEDIAART_API_VERSION@_la_LINK = $(LINK) $(libmediaart_@LIBMEDIAART_API_VERSION@_la_LDFLAGS)
 libmediaart_@LIBMEDIAART_API_VERSION@_la_LDFLAGS = \
-	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
-	-export-symbols-regex '^media_art_.*'
+	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 
 libmediaart_@LIBMEDIAART_API_VERSION@_la_LIBADD = \
 	$(BUILD_LIBS) \
 	$(LIBMEDIAART_LIBS)
 
-BUILT_SOURCES = marshal.c marshal.h $(am__append_5) $(am__append_6)
+BUILT_SOURCES = $(libmediaart_marshal_sources) $(am__append_5) \
+	$(am__append_6)
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = \
+	meson.build \
 	marshal.list
 
 INTROSPECTION_GIRS = $(am__append_4)
@@ -927,7 +935,7 @@ uninstall-am: uninstall-girDATA uninstall-libLTLIBRARIES \
 marshal.h: marshal.list
 	$(AM_V_GEN)$(GLIB_GENMARSHAL) $< --prefix=media_art_marshal --header > $@
 
-marshal.c: marshal.list
+marshal.c: marshal.list marshal.h
 	$(AM_V_GEN)(echo "#include \"marshal.h\""; \
 	    $(GLIB_GENMARSHAL) $< --prefix=media_art_marshal --body) > $@
 

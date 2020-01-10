@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Plugins: libmediaart Library Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="libmediaart Library Reference Manual">
 <link rel="up" href="ch02.html" title="Reference">
 <link rel="prev" href="libmediaart-Cache.html" title="Cache">
@@ -57,7 +57,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">gboolean</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-Plugins.html#media-art-file-to-jpeg" title="media_art_file_to_jpeg ()">media_art_file_to_jpeg</a> <span class="c_punctuation">()</span>
@@ -65,7 +65,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">gboolean</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-Plugins.html#media-art-buffer-to-jpeg" title="media_art_buffer_to_jpeg ()">media_art_buffer_to_jpeg</a> <span class="c_punctuation">()</span>
@@ -91,7 +91,7 @@ to be provided.</p>
 <div class="refsect2">
 <a name="media-art-plugin-init"></a><h3>media_art_plugin_init ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
-media_art_plugin_init (<em class="parameter"><code><span class="type">gint</span> max_width</code></em>);</pre>
+media_art_plugin_init (<em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gint"><span class="type">gint</span></a> max_width</code></em>);</pre>
 <p>This function facilitates a plugin's need to create any
 internal caches before anything else is done. This function must
 exist in each plugin and is called immediately after the plugin is
@@ -128,10 +128,10 @@ called immediately after the plugin is loaded. Conversely,
 <hr>
 <div class="refsect2">
 <a name="media-art-file-to-jpeg"></a><h3>media_art_file_to_jpeg ()</h3>
-<pre class="programlisting"><span class="returnvalue">gboolean</span>
-media_art_file_to_jpeg (<em class="parameter"><code>const <span class="type">gchar</span> *filename</code></em>,
-                        <em class="parameter"><code>const <span class="type">gchar</span> *target</code></em>,
-                        <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+media_art_file_to_jpeg (<em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *filename</code></em>,
+                        <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *target</code></em>,
+                        <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Save <em class="parameter"><code>filename</code></em>
  to <em class="parameter"><code>target</code></em>
  as JPEG format. The <em class="parameter"><code>filename</code></em>
@@ -158,7 +158,7 @@ a JPEG in the first place.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>A <span class="type">GError</span> to use upon failure, or <code class="literal">NULL</code></p></td>
+<td class="parameter_description"><p>A <a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> to use upon failure, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -166,7 +166,7 @@ a JPEG in the first place.</p>
 </div>
 <div class="refsect3">
 <a name="media-art-file-to-jpeg.returns"></a><h4>Returns</h4>
-<p> <code class="literal">TRUE</code> if conversion was successful, otherwise <code class="literal">FALSE</code> is
+<p> <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if conversion was successful, otherwise <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> is
 returned if <em class="parameter"><code>error</code></em>
 is set.</p>
 </div>
@@ -175,12 +175,12 @@ is set.</p>
 <hr>
 <div class="refsect2">
 <a name="media-art-buffer-to-jpeg"></a><h3>media_art_buffer_to_jpeg ()</h3>
-<pre class="programlisting"><span class="returnvalue">gboolean</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 media_art_buffer_to_jpeg (<em class="parameter"><code>const unsigned <span class="type">char</span> *buffer</code></em>,
                           <em class="parameter"><code><span class="type">size_t</span> len</code></em>,
-                          <em class="parameter"><code>const <span class="type">gchar</span> *buffer_mime</code></em>,
-                          <em class="parameter"><code>const <span class="type">gchar</span> *target</code></em>,
-                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *buffer_mime</code></em>,
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *target</code></em>,
+                          <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>This function performs the same operation as
 <a class="link" href="libmediaart-Plugins.html#media-art-file-to-jpeg" title="media_art_file_to_jpeg ()"><code class="function">media_art_file_to_jpeg()</code></a> with the exception that a raw <em class="parameter"><code>buffer</code></em>
  can
@@ -220,7 +220,7 @@ to use</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>A <span class="type">GError</span> to use upon failure, or <code class="literal">NULL</code></p></td>
+<td class="parameter_description"><p>A <a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> to use upon failure, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -228,7 +228,7 @@ to use</p></td>
 </div>
 <div class="refsect3">
 <a name="media-art-buffer-to-jpeg.returns"></a><h4>Returns</h4>
-<p> <code class="literal">TRUE</code> if conversion was successful, otherwise <code class="literal">FALSE</code> is
+<p> <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if conversion was successful, otherwise <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> is
 returned if <em class="parameter"><code>error</code></em>
 is set.</p>
 </div>

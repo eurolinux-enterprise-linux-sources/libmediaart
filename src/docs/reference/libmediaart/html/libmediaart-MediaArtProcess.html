@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Extraction: libmediaart Library Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="libmediaart Library Reference Manual">
 <link rel="up" href="ch02.html" title="Reference">
 <link rel="prev" href="ch02.html" title="Reference">
@@ -41,7 +41,7 @@
 <tbody>
 <tr>
 <td class="function_type">
-<span class="returnvalue">GQuark</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Quarks.html#GQuark"><span class="returnvalue">GQuark</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-MediaArtProcess.html#media-art-error-quark" title="media_art_error_quark ()">media_art_error_quark</a> <span class="c_punctuation">()</span>
@@ -49,7 +49,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">GType</span>
+<a href="/usr/share/gtk-doc/html/gobjectgobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-MediaArtProcess.html#media-art-process-get-type" title="media_art_process_get_type ()">media_art_process_get_type</a> <span class="c_punctuation">()</span>
@@ -65,7 +65,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">gboolean</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-MediaArtProcess.html#media-art-process-uri" title="media_art_process_uri ()">media_art_process_uri</a> <span class="c_punctuation">()</span>
@@ -73,7 +73,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">gboolean</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-MediaArtProcess.html#media-art-process-file" title="media_art_process_file ()">media_art_process_file</a> <span class="c_punctuation">()</span>
@@ -81,7 +81,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">gboolean</span>
+<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="libmediaart-MediaArtProcess.html#media-art-process-buffer" title="media_art_process_buffer ()">media_art_process_buffer</a> <span class="c_punctuation">()</span>
@@ -154,28 +154,29 @@ art using a simple heuristic.</p>
 <a name="libmediaart-MediaArtProcess.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
 <a name="media-art-error-quark"></a><h3>media_art_error_quark ()</h3>
-<pre class="programlisting"><span class="returnvalue">GQuark</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Quarks.html#GQuark"><span class="returnvalue">GQuark</span></a>
 media_art_error_quark (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <div class="refsect3">
 <a name="media-art-error-quark.returns"></a><h4>Returns</h4>
-<p> A <span class="type">GQuark</span> representing the type of <span class="type">GError</span> for <a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> failures.</p>
+<p> the <a href="/usr/share/gtk-doc/html/glibglib-Quarks.html#GQuark"><span class="type">GQuark</span></a> used to identify media art errors in
+GError structures.</p>
 </div>
 <p class="since">Since: 0.2.0</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="media-art-process-get-type"></a><h3>media_art_process_get_type ()</h3>
-<pre class="programlisting"><span class="returnvalue">GType</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/gobjectgobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 media_art_process_get_type (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 </div>
 <hr>
 <div class="refsect2">
 <a name="media-art-process-new"></a><h3>media_art_process_new ()</h3>
 <pre class="programlisting"><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="returnvalue">MediaArtProcess</span></a> *
-media_art_process_new (<em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+media_art_process_new (<em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Initialize a GObject for processing and extracting media art.</p>
 <p>This function initializes cache hash tables, backend plugins,
-storage modules used for removable devices and a connection to D-Bus.</p>
+and storage modules used for removable devices.</p>
 <div class="refsect3">
 <a name="media-art-process-new.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -186,37 +187,37 @@ storage modules used for removable devices and a connection to D-Bus.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>Pointer to potential GLib / MediaArt error, or <code class="literal">NULL</code></p></td>
+<td class="parameter_description"><p>Pointer to potential GLib / MediaArt error, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="media-art-process-new.returns"></a><h4>Returns</h4>
-<p> A new <a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> object on success or <code class="literal">NULL</code> if
+<p> A new <a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> object on success or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if
 <em class="parameter"><code>error</code></em>
-is set. This object must be freed using <code class="function">g_object_unref()</code>.</p>
+is set. This object must be freed using <a href="/usr/share/gtk-doc/html/gobjectgobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a>.</p>
 </div>
 <p class="since">Since: 0.5.0</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="media-art-process-uri"></a><h3>media_art_process_uri ()</h3>
-<pre class="programlisting"><span class="returnvalue">gboolean</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 media_art_process_uri (<em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> *process</code></em>,
                        <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtType" title="enum MediaArtType"><span class="type">MediaArtType</span></a> type</code></em>,
                        <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcessFlags" title="enum MediaArtProcessFlags"><span class="type">MediaArtProcessFlags</span></a> flags</code></em>,
-                       <em class="parameter"><code>const <span class="type">gchar</span> *uri</code></em>,
-                       <em class="parameter"><code>const <span class="type">gchar</span> *artist</code></em>,
-                       <em class="parameter"><code>const <span class="type">gchar</span> *title</code></em>,
-                       <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
-                       <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+                       <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *uri</code></em>,
+                       <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *artist</code></em>,
+                       <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *title</code></em>,
+                       <em class="parameter"><code><a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                       <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>This function calls <a class="link" href="libmediaart-MediaArtProcess.html#media-art-process-file" title="media_art_process_file ()"><code class="function">media_art_process_file()</code></a>, but takes the <em class="parameter"><code>uri</code></em>
  as
-a string rather than a <span class="type">GFile</span> object. Either <em class="parameter"><code>artist</code></em>
+a string rather than a <a href="/usr/share/gtk-doc/html/gioGFile.html#GFile-struct"><span class="type">GFile</span></a> object. Either <em class="parameter"><code>artist</code></em>
  OR <em class="parameter"><code>title</code></em>
  can be
-<code class="literal">NULL</code>, but they can not both be <code class="literal">NULL</code>.</p>
+<a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, but they can not both be <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
 <a name="media-art-process-uri.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -249,24 +250,24 @@ a string rather than a <span class="type">GFile</span> object. Either <em class=
 <tr>
 <td class="parameter_name"><p>artist</p></td>
 <td class="parameter_description"><p> The artist name <em class="parameter"><code>uri</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>title</p></td>
 <td class="parameter_description"><p> The title for <em class="parameter"><code>uri</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> optional <span class="type">GCancellable</span> object, <code class="literal">NULL</code> to
+<td class="parameter_description"><p> optional <a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> object, <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
 ignore. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>Pointer to potential GLib / MediaArt error, or <code class="literal">NULL</code></p></td>
+<td class="parameter_description"><p>Pointer to potential GLib / MediaArt error, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -274,8 +275,8 @@ ignore. </p></td>
 </div>
 <div class="refsect3">
 <a name="media-art-process-uri.returns"></a><h4>Returns</h4>
-<p> <code class="literal">TRUE</code> if <em class="parameter"><code>uri</code></em>
-could be processed or <code class="literal">FALSE</code> if <em class="parameter"><code>error</code></em>
+<p> <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>uri</code></em>
+could be processed or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if <em class="parameter"><code>error</code></em>
 is set.</p>
 </div>
 <p class="since">Since: 0.5.0</p>
@@ -283,15 +284,15 @@ is set.</p>
 <hr>
 <div class="refsect2">
 <a name="media-art-process-file"></a><h3>media_art_process_file ()</h3>
-<pre class="programlisting"><span class="returnvalue">gboolean</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 media_art_process_file (<em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> *process</code></em>,
                         <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtType" title="enum MediaArtType"><span class="type">MediaArtType</span></a> type</code></em>,
                         <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcessFlags" title="enum MediaArtProcessFlags"><span class="type">MediaArtProcessFlags</span></a> flags</code></em>,
-                        <em class="parameter"><code><span class="type">GFile</span> *file</code></em>,
-                        <em class="parameter"><code>const <span class="type">gchar</span> *artist</code></em>,
-                        <em class="parameter"><code>const <span class="type">gchar</span> *title</code></em>,
-                        <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
-                        <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+                        <em class="parameter"><code><a href="/usr/share/gtk-doc/html/gioGFile.html#GFile-struct"><span class="type">GFile</span></a> *file</code></em>,
+                        <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *artist</code></em>,
+                        <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *title</code></em>,
+                        <em class="parameter"><code><a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                        <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Process <em class="parameter"><code>file</code></em>
  and check if media art exists and if it is up to date
 with <em class="parameter"><code>artist</code></em>
@@ -299,7 +300,7 @@ with <em class="parameter"><code>artist</code></em>
  provided. Either <em class="parameter"><code>artist</code></em>
  OR <em class="parameter"><code>title</code></em>
  can be
-<code class="literal">NULL</code>, but they can not both be <code class="literal">NULL</code>.</p>
+<a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, but they can not both be <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <p>NOTE: This function MAY retrieve media art for
 <em class="parameter"><code>artist</code></em>
  and <em class="parameter"><code>title</code></em>
@@ -358,24 +359,24 @@ host machine.</p>
 <tr>
 <td class="parameter_name"><p>artist</p></td>
 <td class="parameter_description"><p> The artist name <em class="parameter"><code>file</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>title</p></td>
 <td class="parameter_description"><p> The title for <em class="parameter"><code>file</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> optional <span class="type">GCancellable</span> object, <code class="literal">NULL</code> to
+<td class="parameter_description"><p> optional <a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> object, <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
 ignore. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <span class="type">GError</span> location to store the error occurring, or <code class="literal">NULL</code>
+<td class="parameter_description"><p>a <a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
 to ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -384,8 +385,8 @@ to ignore.</p></td>
 </div>
 <div class="refsect3">
 <a name="media-art-process-file.returns"></a><h4>Returns</h4>
-<p> <code class="literal">TRUE</code> if <em class="parameter"><code>file</code></em>
-could be processed or <code class="literal">FALSE</code> if <em class="parameter"><code>error</code></em>
+<p> <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>file</code></em>
+could be processed or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if <em class="parameter"><code>error</code></em>
 is set.</p>
 </div>
 <p class="since">Since: 0.3.0</p>
@@ -393,18 +394,18 @@ is set.</p>
 <hr>
 <div class="refsect2">
 <a name="media-art-process-buffer"></a><h3>media_art_process_buffer ()</h3>
-<pre class="programlisting"><span class="returnvalue">gboolean</span>
+<pre class="programlisting"><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 media_art_process_buffer (<em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcess" title="struct MediaArtProcess"><span class="type">MediaArtProcess</span></a> *process</code></em>,
                           <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtType" title="enum MediaArtType"><span class="type">MediaArtType</span></a> type</code></em>,
                           <em class="parameter"><code><a class="link" href="libmediaart-MediaArtProcess.html#MediaArtProcessFlags" title="enum MediaArtProcessFlags"><span class="type">MediaArtProcessFlags</span></a> flags</code></em>,
-                          <em class="parameter"><code><span class="type">GFile</span> *related_file</code></em>,
-                          <em class="parameter"><code>const <span class="type">guchar</span> *buffer</code></em>,
-                          <em class="parameter"><code><span class="type">gsize</span> len</code></em>,
-                          <em class="parameter"><code>const <span class="type">gchar</span> *mime</code></em>,
-                          <em class="parameter"><code>const <span class="type">gchar</span> *artist</code></em>,
-                          <em class="parameter"><code>const <span class="type">gchar</span> *title</code></em>,
-                          <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
-                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+                          <em class="parameter"><code><a href="/usr/share/gtk-doc/html/gioGFile.html#GFile-struct"><span class="type">GFile</span></a> *related_file</code></em>,
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#guchar"><span class="type">guchar</span></a> *buffer</code></em>,
+                          <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gsize"><span class="type">gsize</span></a> len</code></em>,
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *mime</code></em>,
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *artist</code></em>,
+                          <em class="parameter"><code>const <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *title</code></em>,
+                          <em class="parameter"><code><a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                          <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Processes a memory buffer represented by <em class="parameter"><code>buffer</code></em>
  and <em class="parameter"><code>len</code></em>
 . If you
@@ -414,7 +415,7 @@ have extracted any embedded media art and passed this in as
 saved in the media art cache.</p>
 <p>Either <em class="parameter"><code>artist</code></em>
  OR <em class="parameter"><code>title</code></em>
- can be <code class="literal">NULL</code>, but they can not both be <code class="literal">NULL</code>.</p>
+ can be <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, but they can not both be <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <p>If <em class="parameter"><code>file</code></em>
  is on a removable filesystem, the media art file will be saved in a
 cache on the removable file system rather than on the host machine.</p>
@@ -450,7 +451,7 @@ cache on the removable file system rather than on the host machine.</p>
 <tr>
 <td class="parameter_name"><p>buffer</p></td>
 <td class="parameter_description"><p> a buffer containing <em class="parameter"><code>file</code></em>
-data, or <code class="literal">NULL</code>. </p></td>
+data, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=len][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -462,30 +463,30 @@ data, or <code class="literal">NULL</code>. </p></td>
 <tr>
 <td class="parameter_name"><p>mime</p></td>
 <td class="parameter_description"><p> MIME type of <em class="parameter"><code>buffer</code></em>
-, or <code class="literal">NULL</code>. </p></td>
+, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>artist</p></td>
 <td class="parameter_description"><p> The artist name <em class="parameter"><code>file</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>title</p></td>
 <td class="parameter_description"><p> The title for <em class="parameter"><code>file</code></em>
-or <code class="literal">NULL</code>. </p></td>
+or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> optional <span class="type">GCancellable</span> object, <code class="literal">NULL</code> to
+<td class="parameter_description"><p> optional <a href="/usr/share/gtk-doc/html/gioGCancellable.html#GCancellable-struct"><span class="type">GCancellable</span></a> object, <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
 ignore. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <span class="type">GError</span> location to store the error occurring, or <code class="literal">NULL</code>
+<td class="parameter_description"><p>a <a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
 to ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -494,8 +495,8 @@ to ignore.</p></td>
 </div>
 <div class="refsect3">
 <a name="media-art-process-buffer.returns"></a><h4>Returns</h4>
-<p> <code class="literal">TRUE</code> if <em class="parameter"><code>file</code></em>
-could be processed or <code class="literal">FALSE</code> if <em class="parameter"><code>error</code></em>
+<p> <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>file</code></em>
+could be processed or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if <em class="parameter"><code>error</code></em>
 is set.</p>
 </div>
 <p class="since">Since: 0.5.0</p>
@@ -649,7 +650,7 @@ usually an initiation error.</p>
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody><tr>
-<td class="struct_member_name"><p><span class="type">GObject</span> <em class="structfield"><code><a name="MediaArtProcess.parent"></a>parent</code></em>;</p></td>
+<td class="struct_member_name"><p><a href="/usr/share/gtk-doc/html/gobjectgobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> <em class="structfield"><code><a name="MediaArtProcess.parent"></a>parent</code></em>;</p></td>
 <td class="struct_member_description"><p>parent object</p></td>
 <td class="struct_member_annotations"> </td>
 </tr></tbody>
@@ -673,7 +674,7 @@ usually an initiation error.</p>
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody><tr>
-<td class="struct_member_name"><p><span class="type">GObjectClass</span> <em class="structfield"><code><a name="MediaArtProcessClass.parent"></a>parent</code></em>;</p></td>
+<td class="struct_member_name"><p><a href="/usr/share/gtk-doc/html/gobjectgobject-The-Base-Object-Type.html#GObjectClass"><span class="type">GObjectClass</span></a> <em class="structfield"><code><a name="MediaArtProcessClass.parent"></a>parent</code></em>;</p></td>
 <td class="struct_member_description"><p>parent object class</p></td>
 <td class="struct_member_annotations"> </td>
 </tr></tbody>

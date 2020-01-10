@@ -1,5 +1,5 @@
 Name:           libmediaart
-Version:        1.9.1
+Version:        1.9.4
 Release:        1%{?dist}
 Summary:        Library for managing media art caches
 
@@ -10,12 +10,12 @@ Source0:        https://download.gnome.org/sources/%{name}/1.9/%{name}-%{version
 BuildRequires:  pkgconfig(glib-2.0) pkgconfig(gio-2.0) pkgconfig(gio-unix-2.0)
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
 BuildRequires:  pkgconfig(gobject-introspection-1.0)
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 7
 # Test requires the jpeg gdk-pixbuf loader
 BuildRequires:  gdk-pixbuf2-modules
 %endif
 BuildRequires:  vala vala-devel
-BuildRequires:  xorg-x11-server-Xvfb dbus-x11
+BuildRequires:  dbus
 
 %description
 Library tasked with managing, extracting and handling media art caches.
@@ -55,7 +55,7 @@ make %{?_smp_mflags}
 find $RPM_BUILD_ROOT -name '*.la' -delete -print
 
 %check
-xvfb-run make check
+dbus-run-session -- make check
 
 %post -p /sbin/ldconfig
 
@@ -82,6 +82,10 @@ xvfb-run make check
 
 
 %changelog
+* Fri May 25 2018 Kalev Lember <klember@redhat.com> - 1.9.4-1
+- Update to 1.9.4
+- Resolves: #1570009
+
 * Thu Mar 09 2017 Kalev Lember <klember@redhat.com> - 1.9.1-1
 - Update to 1.9.1
 - Drop upstreamed patches

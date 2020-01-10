@@ -12,9 +12,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if we enable Nemo specific features */
-#undef HAVE_NEMO
-
 /* Define if we have Qt */
 #undef HAVE_QT
 
@@ -98,6 +95,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* defines how to decorate public symbols while building */
+#undef _LIBMEDIAART_EXTERN
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

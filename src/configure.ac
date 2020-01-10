@@ -13,7 +13,7 @@ AC_PREREQ([2.64])
 # set LIBMEDIAART_BINARY_AGE and LIBMEDIAART_INTERFACE_AGE to 0.
 m4_define([libmediaart_major_version], [1])
 m4_define([libmediaart_minor_version], [9])
-m4_define([libmediaart_micro_version], [1])
+m4_define([libmediaart_micro_version], [4])
 m4_define([libmediaart_interface_age], [0])
 m4_define([libmediaart_binary_age],
           [m4_eval(100 * libmediaart_minor_version + libmediaart_micro_version)])
@@ -304,22 +304,6 @@ LIBMEDIAART_CFLAGS="$LIBMEDIAART_CFLAGS $BACKEND_CFLAGS"
 LIBMEDIAART_LIBS="$LIBMEDIAART_LIBS $BACKEND_LIBS"
 AC_SUBST(LIBMEDIAART_BACKEND)
 
-#################################################################
-# Check if we should install nemo specific features
-#################################################################
-
-AC_ARG_ENABLE(nemo,
-              AS_HELP_STRING([--enable-nemo],
-                             [enable nemo specific [[default=no]]]),
-             [enable_nemo="$enableval"],
-             [enable_nemo=no])
-
-AM_CONDITIONAL(HAVE_NEMO, test "x$enable_nemo" = "xyes")
-
-if test "x$enable_nemo" = "xyes" ; then
-   AC_DEFINE(HAVE_NEMO, 1, [Define if we enable Nemo specific features])
-fi
-
 ####################################################################
 # Should we build GLib based unit tests
 ####################################################################
@@ -343,6 +327,40 @@ else
 fi
 
 AM_CONDITIONAL(HAVE_UNIT_TESTS, test "x$have_unit_tests" = "xyes")
+
+dnl *********************************************************************
+dnl * Check for -fvisibility=hidden to determine if we can do GNU-style *
+dnl * visibility attributes for symbol export control                   *
+dnl *********************************************************************
+
+LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS=""
+case "$host" in
+  *-*-mingw*)
+    dnl on mingw32 we do -fvisibility=hidden and __declspec(dllexport)
+    AC_DEFINE([_LIBMEDIAART_EXTERN], [__attribute__((visibility("default"))) __declspec(dllexport) extern],
+              [defines how to decorate public symbols while building])
+    CFLAGS="${CFLAGS} -fvisibility=hidden"
+    ;;
+  *)
+    dnl on other compilers, check if we can do -fvisibility=hidden
+    SAVED_CFLAGS="${CFLAGS}"
+    CFLAGS="-fvisibility=hidden"
+    AC_MSG_CHECKING([for -fvisibility=hidden compiler flag])
+    AC_TRY_COMPILE([], [return 0],
+                   AC_MSG_RESULT(yes)
+                   enable_fvisibility_hidden=yes,
+                   AC_MSG_RESULT(no)
+                   enable_fvisibility_hidden=no)
+    CFLAGS="${SAVED_CFLAGS}"
+
+    AS_IF([test "${enable_fvisibility_hidden}" = "yes"], [
+      AC_DEFINE([_LIBMEDIAART_EXTERN], [__attribute__((visibility("default"))) extern],
+                [defines how to decorate public symbols while building])
+      LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
+    ])
+    ;;
+esac
+AC_SUBST(LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS)
 
 ##################################################################
 # Write generated files
@@ -373,6 +391,4 @@ Build Configuration:
 	Enable documentation:                   $enable_gtk_doc
 
 	Support media art processing:           $selected_for_media_art
-
-        Support Nemo                            $enable_nemo
 "

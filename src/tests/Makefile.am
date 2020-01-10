@@ -16,3 +16,6 @@ LDADD = \
 	$(LIBMEDIAART_LIBS)
 
 mediaarttest_SOURCES = mediaarttest.c
+
+EXTRA_DIST = meson.build \
+	$(dist_test_data)

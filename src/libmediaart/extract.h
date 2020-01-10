@@ -23,6 +23,8 @@
 #include <glib.h>
 #include <gio/gio.h>
 
+#include "mediaart-macros.h"
+
 #if !defined (__LIBMEDIAART_INSIDE__) && !defined (LIBMEDIAART_COMPILATION)
 #error "Only <libmediaart/mediaart.h> must be included directly."
 #endif
@@ -88,13 +90,7 @@ typedef enum {
 } MediaArtError;
 
 
-/**
- * media_art_error_quark:
- *
- * Returns: A #GQuark representing the type of #GError for #MediaArtProcess failures.
- *
- * Since: 0.2.0
- **/
+_LIBMEDIAART_EXTERN
 GQuark media_art_error_quark (void) G_GNUC_CONST;
 
 
@@ -129,9 +125,12 @@ struct _MediaArtProcessClass {
 };
 
 
+_LIBMEDIAART_EXTERN
 GType            media_art_process_get_type      (void) G_GNUC_CONST;
 
+_LIBMEDIAART_EXTERN
 MediaArtProcess *media_art_process_new           (GError               **error);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_uri           (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -140,6 +139,7 @@ gboolean         media_art_process_uri           (MediaArtProcess       *process
                                                   const gchar           *title,
                                                   GCancellable          *cancellable,
                                                   GError               **error);
+_LIBMEDIAART_EXTERN
 void             media_art_process_uri_async     (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -150,9 +150,11 @@ void             media_art_process_uri_async     (MediaArtProcess       *process
                                                   GCancellable          *cancellable,
                                                   GAsyncReadyCallback    callback,
                                                   gpointer               user_data);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_uri_finish    (MediaArtProcess       *process,
                                                   GAsyncResult          *result,
                                                   GError               **error);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_file          (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -161,6 +163,7 @@ gboolean         media_art_process_file          (MediaArtProcess       *process
                                                   const gchar           *title,
                                                   GCancellable          *cancellable,
                                                   GError               **error);
+_LIBMEDIAART_EXTERN
 void             media_art_process_file_async    (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -171,9 +174,11 @@ void             media_art_process_file_async    (MediaArtProcess       *process
                                                   GCancellable          *cancellable,
                                                   GAsyncReadyCallback    callback,
                                                   gpointer               user_data);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_file_finish   (MediaArtProcess       *process,
                                                   GAsyncResult          *result,
                                                   GError               **error);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_buffer        (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -185,6 +190,7 @@ gboolean         media_art_process_buffer        (MediaArtProcess       *process
                                                   const gchar           *title,
                                                   GCancellable          *cancellable,
                                                   GError               **error);
+_LIBMEDIAART_EXTERN
 void             media_art_process_buffer_async  (MediaArtProcess       *process,
                                                   MediaArtType           type,
                                                   MediaArtProcessFlags   flags,
@@ -198,6 +204,7 @@ void             media_art_process_buffer_async  (MediaArtProcess       *process
                                                   GCancellable          *cancellable,
                                                   GAsyncReadyCallback    callback,
                                                   gpointer               user_data);
+_LIBMEDIAART_EXTERN
 gboolean         media_art_process_buffer_finish (MediaArtProcess       *process,
                                                   GAsyncResult          *result,
                                                   GError               **error);

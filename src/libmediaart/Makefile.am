@@ -1,6 +1,8 @@
 AM_CPPFLAGS = \
 	$(BUILD_CFLAGS) \
-	$(LIBMEDIAART_CFLAGS)
+	$(LIBMEDIAART_CFLAGS) \
+	$(LIBMEDIAART_HIDDEN_VISIBILITY_CFLAGS)
+
 
 #
 # Binaries
@@ -9,6 +11,10 @@ lib_LTLIBRARIES = libmediaart-@LIBMEDIAART_API_VERSION@.la
 
 libmediaartdir = $(libdir)/libmediaart-$(LIBMEDIAART_API_VERSION)/
 libmediaartincludedir=$(includedir)/libmediaart-$(LIBMEDIAART_API_VERSION)/libmediaart/
+
+libmediaart_marshal_sources = \
+	marshal.c \
+	marshal.h
 
 libmediaart_sources = \
 	cache.c \
@@ -21,14 +27,16 @@ libmediaart_sources = \
 
 libmediaartinclude_HEADERS = \
 	mediaart.h \
+	mediaart-macros.h \
 	cache.h \
 	extract.h \
 	extractgeneric.h
 
+libmediaart_@LIBMEDIAART_API_VERSION@_la_DEPENDENCIES = $(libmediaart_marshal_sources)
+
 libmediaart_@LIBMEDIAART_API_VERSION@_la_SOURCES = \
-	$(libmediaart_sources) \
-	marshal.c \
-	marshal.h
+	$(libmediaart_marshal_sources) \
+	$(libmediaart_sources)
 
 if HAVE_GDKPIXBUF
 libmediaart_@LIBMEDIAART_API_VERSION@_la_SOURCES += extractpixbuf.c
@@ -44,8 +52,7 @@ endif
 endif
 
 libmediaart_@LIBMEDIAART_API_VERSION@_la_LDFLAGS = \
-	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
-	-export-symbols-regex '^media_art_.*'
+	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 
 libmediaart_@LIBMEDIAART_API_VERSION@_la_LIBADD = \
 	$(BUILD_LIBS) \
@@ -55,18 +62,18 @@ libmediaart_@LIBMEDIAART_API_VERSION@_la_LIBADD = \
 marshal.h: marshal.list
 	$(AM_V_GEN)$(GLIB_GENMARSHAL) $< --prefix=media_art_marshal --header > $@
 
-marshal.c: marshal.list
+marshal.c: marshal.list marshal.h
 	$(AM_V_GEN)(echo "#include \"marshal.h\""; \
 	    $(GLIB_GENMARSHAL) $< --prefix=media_art_marshal --body) > $@
 
 
 BUILT_SOURCES = \
-	marshal.c \
-	marshal.h
+	$(libmediaart_marshal_sources)
 
 CLEANFILES = $(BUILT_SOURCES)
 
 EXTRA_DIST = \
+	meson.build \
 	marshal.list
 
 

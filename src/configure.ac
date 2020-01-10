@@ -11,16 +11,16 @@ AC_PREREQ([2.64])
 # if any functions have been added, set LIBMEDIAART_INTERFACE_AGE to 0.
 # if backwards compatibility has been broken,
 # set LIBMEDIAART_BINARY_AGE and LIBMEDIAART_INTERFACE_AGE to 0.
-m4_define([libmediaart_major_version], [0])
-m4_define([libmediaart_minor_version], [7])
-m4_define([libmediaart_micro_version], [0])
+m4_define([libmediaart_major_version], [1])
+m4_define([libmediaart_minor_version], [9])
+m4_define([libmediaart_micro_version], [1])
 m4_define([libmediaart_interface_age], [0])
 m4_define([libmediaart_binary_age],
           [m4_eval(100 * libmediaart_minor_version + libmediaart_micro_version)])
 m4_define([libmediaart_version],
           [libmediaart_major_version.libmediaart_minor_version.libmediaart_micro_version])
 # This is the X.Y used in -lliblibmediaart-FOO-X.Y
-m4_define([libmediaart_api_version], [1.0])
+m4_define([libmediaart_api_version], [2.0])
 
 # libtool version related macros
 m4_define([libmediaart_lt_release], [libmediaart_major_version.libmediaart_minor_version])
@@ -38,7 +38,7 @@ m4_define([libmediaart_lt_current_minus_age],
 # for Libmediaart.
 #
 # LIBMEDIAART_BINARY_VERSION=$LIBMEDIAART_MAJOR_VERSION.$LIBMEDIAART_MINOR_VERSION.$LT_CURRENT
-m4_define([libmediaart_binary_version], [1.0.0])
+m4_define([libmediaart_binary_version], [2.0.0])
 
 AC_INIT([libmediaart],
         [libmediaart_version],
@@ -207,6 +207,11 @@ AC_ARG_ENABLE(qt,
                              [enable Qt support, (MP3 album art) [[default=auto]]]),,
               [enable_qt=auto])
 
+AC_ARG_WITH(qt-version,
+            AS_HELP_STRING([--with-qt-version=major],
+                           [Force specific Qt version [[default=auto]]]),,
+            [with_qt_version=auto])
+
 selected_for_media_art="no  (disabled)"
 
 ##################################################################
@@ -218,14 +223,18 @@ if test "x$enable_qt" == "xyes" && test "x$enable_gdkpixbuf" == "xyes"; then
 fi
 
 if test "x$enable_qt" != "xno" && test "x$enable_gdkpixbuf" != "xyes"; then
-   PKG_CHECK_MODULES(QT5,
-                     [Qt5Gui >= $QT5_REQUIRED],
-                     [have_qt5=yes],
-                     [have_qt5=no])
-   PKG_CHECK_MODULES(QT4,
-                     [QtGui >= $QT4_REQUIRED],
-                     [have_qt4=yes],
-                     [have_qt4=no])
+   if test "x$with_qt_version" == "xauto" || test "x$with_qt_version" == "x5"; then
+       PKG_CHECK_MODULES(QT5,
+                         [Qt5Gui >= $QT5_REQUIRED],
+                         [have_qt5=yes],
+                         [have_qt5=no])
+   fi
+   if test "x$with_qt_version" == "xauto" || test "x$with_qt_version" == "x4"; then
+       PKG_CHECK_MODULES(QT4,
+                         [QtGui >= $QT4_REQUIRED],
+                         [have_qt4=yes],
+                         [have_qt4=no])
+   fi
 
    if test "x$have_qt5" = "xyes"; then
       BACKEND_CFLAGS="$QT5_CFLAGS -fPIC"

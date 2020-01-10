@@ -24,6 +24,7 @@
 #include <errno.h>
 
 #include <glib/gstdio.h>
+#include <glib/gi18n.h>
 #include <gio/gio.h>
 
 #include "extractgeneric.h"
@@ -102,6 +103,21 @@ typedef enum {
 	IMAGE_MATCH_TYPE_COUNT
 } ImageMatchType;
 
+typedef struct {
+	MediaArtType type;
+	MediaArtProcessFlags flags;
+
+	GFile *file;
+	gchar *uri;
+
+	unsigned char *buffer;
+	size_t len;
+	gchar *mime;
+
+	gchar *artist;
+	gchar *title;
+} ProcessData;
+
 static void media_art_queue_cb                    (GObject        *source_object,
                                                    GAsyncResult   *res,
                                                    gpointer        user_data);
@@ -146,6 +162,8 @@ media_art_process_initable_init (GInitable     *initable,
 	MediaArtProcessPrivate *private;
 	MediaArtProcess *process;
 	GError *local_error = NULL;
+	gchar *dir;
+	gboolean retval;
 
 	process = MEDIA_ART_PROCESS (initable);
 	private = media_art_process_get_instance_private (process);
@@ -174,17 +192,32 @@ media_art_process_initable_init (GInitable     *initable,
 	private->storage = storage_new ();
 	if (!private->storage) {
 		g_critical ("Could not start storage module for removable media detection");
-
-		if (error) {
-			*error = g_error_new (media_art_error_quark (),
-			                      MEDIA_ART_ERROR_NO_STORAGE,
-			                      "Could not initialize storage module");
-		}
-
+		g_set_error_literal (error,
+		                     media_art_error_quark (),
+		                     MEDIA_ART_ERROR_NO_STORAGE,
+		                     _("Could not initialize storage module"));
 		return FALSE;
 	}
 
-	return TRUE;
+	/* Returns 0 if already exists, so we don't check if directory
+	 * existed before, it's an additional stat() call we just
+	 * don't need.
+	 */
+	dir = g_build_filename (g_get_user_cache_dir (), "media-art", NULL);
+	retval = g_mkdir_with_parents (dir, 0770);
+
+	if (retval == -1) {
+		g_set_error (error,
+		             media_art_error_quark (),
+		             MEDIA_ART_ERROR_NO_CACHE_DIR,
+		             _("Could not create cache directory '%s', %d returned by g_mkdir_with_parents()"),
+		             dir,
+		             retval);
+	}
+
+	g_free (dir);
+
+	return retval == 0 ? TRUE : FALSE;
 }
 
 static void
@@ -286,63 +319,86 @@ file_get_checksum_if_exists (GChecksumType   checksum_type,
                              const gchar    *path,
                              gchar         **md5,
                              gboolean        check_jpeg,
-                             gboolean       *is_jpeg)
+                             gboolean       *is_jpeg,
+                             GError        **error)
 {
-	GFile *file = g_file_new_for_path (path);
+	GFile *file;
 	GFileInputStream *stream;
 	GChecksum *checksum;
-	gboolean retval;
+	GError *local_error = NULL;
+	gssize rsize;
+	guchar buffer[1024];
+	gboolean stop = FALSE;
 
-	checksum = g_checksum_new (checksum_type);
+	file = g_file_new_for_path (path);
+	stream = g_file_read (file, NULL, &local_error);
 
-	if (!checksum) {
-		g_debug ("Can't create checksum engine");
+	if (local_error) {
+		g_object_unref (file);
+		g_propagate_error (error, local_error);
+		return FALSE;
+	}
+
+	if (!stream) {
+		g_set_error (error,
+		             g_io_error_quark (),
+		             G_IO_ERROR_FAILED,
+		             "Could not calculate MD5 checksum for '%s', g_file_read() gave no error either?!",
+		             path);
 		g_object_unref (file);
 		return FALSE;
 	}
 
-	stream = g_file_read (file, NULL, NULL);
+	checksum = g_checksum_new (checksum_type);
 
-	if (stream) {
-		gssize rsize;
-		guchar buffer[1024];
+	if (!checksum) {
+		g_set_error (error,
+		             g_io_error_quark (),
+		             G_IO_ERROR_FAILED,
+		             "Could not calculate MD5 checksum for '%s', g_checksum_new() failed",
+		             path);
+		g_object_unref (file);
+		g_object_unref (stream);
+		return FALSE;
+	}
 
-		/* File exists & readable always means true retval */
-		retval = TRUE;
-
-		if (check_jpeg) {
-			if (g_input_stream_read_all (G_INPUT_STREAM (stream),
-			                             buffer,
-			                             3,
-			                             (gsize *) &rsize,
-			                             NULL,
-			                             NULL)) {
-				if (rsize >= 3 &&
-				    buffer[0] == 0xff &&
-				    buffer[1] == 0xd8 &&
-				    buffer[2] == 0xff) {
-					if (is_jpeg) {
-						*is_jpeg = TRUE;
-					}
-
-					/* Add the read bytes to the checksum */
-					g_checksum_update (checksum, buffer, rsize);
-				} else {
-					/* Larger than 3 bytes but incorrect jpeg header */
-					if (is_jpeg) {
-						*is_jpeg = FALSE;
-					}
-					goto end;
+	/* File exists & readable always means true retval */
+	if (check_jpeg) {
+		if (g_input_stream_read_all (G_INPUT_STREAM (stream),
+		                             buffer,
+		                             3,
+		                             (gsize *) &rsize,
+		                             NULL,
+		                             NULL)) {
+			if (rsize >= 3 &&
+			    buffer[0] == 0xff &&
+			    buffer[1] == 0xd8 &&
+			    buffer[2] == 0xff) {
+				if (is_jpeg) {
+					*is_jpeg = TRUE;
 				}
+
+				/* Add the read bytes to the checksum */
+				g_checksum_update (checksum, buffer, rsize);
 			} else {
-				/* Smaller than 3 bytes, not a jpeg */
+				/* Larger than 3 bytes but incorrect jpeg header */
 				if (is_jpeg) {
 					*is_jpeg = FALSE;
 				}
-				goto end;
-			}
-		}
 
+				stop = TRUE;
+			}
+		} else {
+			/* Smaller than 3 bytes, not a jpeg */
+			if (is_jpeg) {
+				*is_jpeg = FALSE;
+			}
+
+			stop = TRUE;
+		}
+	}
+
+	if (!stop) {
 		while ((rsize = g_input_stream_read (G_INPUT_STREAM (stream),
 		                                     buffer,
 		                                     1024,
@@ -354,22 +410,13 @@ file_get_checksum_if_exists (GChecksumType   checksum_type,
 		if (md5) {
 			*md5 = g_strdup (g_checksum_get_string (checksum));
 		}
-
-	} else {
-		g_debug ("%s isn't readable while calculating MD5 checksum", path);
-		/* File doesn't exist or isn't readable */
-		retval = FALSE;
 	}
 
-end:
-	if (stream) {
-		g_object_unref (stream);
-	}
-
+	g_object_unref (stream);
 	g_checksum_free (checksum);
 	g_object_unref (file);
 
-	return retval;
+	return TRUE;
 }
 
 static gboolean
@@ -379,17 +426,24 @@ convert_from_other_format (const gchar  *found,
                            const gchar  *artist,
                            GError      **error)
 {
+	GError *local_error = NULL;
 	gboolean retval;
 	gchar *sum1 = NULL;
+	gchar *sum2 = NULL;
 	gchar *target_temp;
 
 	target_temp = g_strdup_printf ("%s-tmp", target);
 
-	if (!media_art_file_to_jpeg (found, target_temp, error)) {
+	media_art_file_to_jpeg (found, target_temp, &local_error);
+
+	if (local_error) {
+		g_propagate_error (error, local_error);
+		g_unlink (target_temp);
 		g_free (target_temp);
 		return FALSE;
 	}
 
+	/* If artist doesn't exist, try to rename temp file to album path */
 	if (artist == NULL || g_strcmp0 (artist, " ") == 0) {
 		retval = g_rename (target_temp, album_path) == 0;
 
@@ -401,73 +455,48 @@ convert_from_other_format (const gchar  *found,
 			             target_temp,
 			             album_path,
 			             g_strerror (errno));
+			g_unlink (target_temp);
 		}
 
-		g_debug ("rename(%s, %s) error: %s",
+		g_debug ("Renaming ('%s' --> '%s'), %s",
 		         target_temp,
 		         album_path,
-		         g_strerror (errno));
-	} else if (file_get_checksum_if_exists (G_CHECKSUM_MD5,
-	                                        target_temp,
-	                                        &sum1,
-	                                        FALSE,
-	                                        NULL)) {
-		gchar *sum2 = NULL;
+		         !retval ? g_strerror (errno) : "no error given");
 
-		if (file_get_checksum_if_exists (G_CHECKSUM_MD5,
-		                                 album_path,
-		                                 &sum2,
-		                                 FALSE,
-		                                 NULL)) {
-			if (g_strcmp0 (sum1, sum2) == 0) {
+		g_free (target_temp);
 
-				/* If album-space-md5.jpg is the same as found,
-				 * make a symlink */
-				retval = symlink (album_path, target) == 0;
+		return retval;
+	}
 
-				if (!retval) {
-					g_set_error (error,
-					             media_art_error_quark (),
-					             MEDIA_ART_ERROR_RENAME_FAILED,
-					             "Could not rename '%s' to '%s': %s",
-					             album_path,
-					             target,
-					             g_strerror (errno));
-				}
+	/* Checksum both temp file and album path and decide what to
+	 * do base on what we find...
+	 */
+	file_get_checksum_if_exists (G_CHECKSUM_MD5,
+	                             target_temp,
+	                             &sum1,
+	                             FALSE,
+	                             NULL,
+	                             &local_error);
 
-				g_debug ("symlink(%s, %s) error: %s",
-				         album_path,
-				         target,
-				         g_strerror (errno));
+	if (local_error) {
+		g_propagate_error (error, local_error);
+		g_unlink (target_temp);
+		g_free (target_temp);
+		return FALSE;
+	}
 
-				g_unlink (target_temp);
-			} else {
+	file_get_checksum_if_exists (G_CHECKSUM_MD5,
+	                             album_path,
+	                             &sum2,
+	                             FALSE,
+	                             NULL,
+	                             &local_error);
 
-				/* If album-space-md5.jpg isn't the same as found,
-				 * make a new album-md5-md5.jpg (found -> target) */
-				retval = g_rename (target_temp, album_path) == 0;
-
-				if (!retval) {
-					g_set_error (error,
-					             media_art_error_quark (),
-					             MEDIA_ART_ERROR_RENAME_FAILED,
-					             "Could not rename '%s' to '%s': %s",
-					             target_temp,
-					             album_path,
-					             g_strerror (errno));
-				}
-
-				g_debug ("rename(%s, %s) error: %s",
-				         target_temp,
-				         album_path,
-				         g_strerror (errno));
-			}
-
-			g_free (sum2);
-		} else {
-			/* If there's not yet a album-space-md5.jpg, make one,
-			 * and symlink album-md5-md5.jpg to it */
-			retval = g_rename (target_temp, album_path) == 0;
+	if (!local_error) {
+		if (g_strcmp0 (sum1, sum2) == 0) {
+			/* If album-space-md5.jpg is the same as found,
+			 * make a symlink */
+			retval = symlink (album_path, target) == 0;
 
 			if (!retval) {
 				g_set_error (error,
@@ -477,33 +506,74 @@ convert_from_other_format (const gchar  *found,
 				             album_path,
 				             target,
 				             g_strerror (errno));
-			} else {
-				retval = symlink (album_path, target) == 0;
-
-				if (!retval) {
-					g_set_error (error,
-					             media_art_error_quark (),
-					             MEDIA_ART_ERROR_SYMLINK_FAILED,
-					             "Could not rename '%s' to '%s': %s",
-					             album_path,
-					             target,
-					             g_strerror (errno));
-				}
-
-				g_debug ("symlink(%s,%s) error: %s",
-					album_path,
-					target,
-					g_strerror (errno));
 			}
+
+			g_debug ("Creating symlink ('%s' --> '%s'), %s",
+			         album_path,
+			         target,
+			         !retval ? g_strerror (errno) : "no error given");
+
+			g_unlink (target_temp);
+		} else {
+			/* If album-space-md5.jpg isn't the same as found,
+			 * make a new album-md5-md5.jpg (found -> target) */
+			retval = g_rename (target_temp, album_path) == 0;
+
+			if (!retval) {
+				g_set_error (error,
+				             media_art_error_quark (),
+				             MEDIA_ART_ERROR_RENAME_FAILED,
+				             "Could not rename '%s' to '%s': %s",
+				             target_temp,
+				             album_path,
+				             g_strerror (errno));
+			}
+
+			g_debug ("Renaming ('%s' --> '%s'), %s",
+			         target_temp,
+			         album_path,
+			         !retval ? g_strerror (errno) : "no error given");
 		}
 
-		g_free (sum1);
+		g_free (sum2);
 	} else {
-		g_debug ("Can't read %s while calculating checksum", target_temp);
-		/* Can't read the file that it was converted to, strange ... */
-		g_unlink (target_temp);
+		g_clear_error (&local_error);
+
+		/* If there's not yet a album-space-md5.jpg, make one,
+		 * and symlink album-md5-md5.jpg to it */
+		retval = g_rename (target_temp, album_path) == 0;
+
+		if (!retval) {
+			g_set_error (error,
+			             media_art_error_quark (),
+			             MEDIA_ART_ERROR_RENAME_FAILED,
+			             "Could not rename '%s' to '%s': %s",
+			             album_path,
+			             target,
+			             g_strerror (errno));
+
+			g_unlink (target_temp);
+		} else {
+			retval = symlink (album_path, target) == 0;
+
+			if (!retval) {
+				g_set_error (error,
+				             media_art_error_quark (),
+				             MEDIA_ART_ERROR_SYMLINK_FAILED,
+				             "Could not rename '%s' to '%s': %s",
+				             album_path,
+				             target,
+				             g_strerror (errno));
+			}
+
+			g_debug ("Creating symlink ('%s' --> '%s'), %s",
+			         album_path,
+			         target,
+			         !retval ? g_strerror (errno) : "no error given");
+		}
 	}
 
+	g_free (sum1);
 	g_free (target_temp);
 
 	return retval;
@@ -693,7 +763,6 @@ media_art_find_by_artist_and_title (const gchar  *uri,
 static gboolean
 get_heuristic (MediaArtType   type,
                const gchar   *filename_uri,
-               const gchar   *local_uri,
                const gchar   *artist,
                const gchar   *title,
                GError       **error)
@@ -721,44 +790,7 @@ get_heuristic (MediaArtType   type,
 	media_art_get_path (artist_stripped,
 	                    title_stripped,
 	                    media_art_type_name[type],
-	                    NULL,
-	                    &target,
-	                    NULL);
-
-	/* Copy from local album art (.mediaartlocal) to spec */
-	if (local_uri) {
-		GFile *local_file, *file;
-
-		local_file = g_file_new_for_uri (local_uri);
-
-		if (g_file_query_exists (local_file, NULL)) {
-			g_debug ("Album art being copied from local (.mediaartlocal) file:'%s'",
-			         local_uri);
-
-			file = g_file_new_for_path (target);
-
-			g_file_copy_async (local_file,
-			                   file,
-			                   0,
-			                   0,
-			                   NULL,
-			                   NULL,
-			                   NULL,
-			                   NULL,
-			                   NULL);
-
-			g_object_unref (file);
-			g_object_unref (local_file);
-
-			g_free (target);
-			g_free (artist_stripped);
-			g_free (title_stripped);
-
-			return TRUE;
-		}
-
-		g_object_unref (local_file);
-	}
+	                    &target);
 
 	art_file_path = media_art_find_by_artist_and_title (filename_uri,
 	                                                    type,
@@ -780,6 +812,7 @@ get_heuristic (MediaArtType   type,
 
 	if (g_str_has_suffix (art_file_path, "jpeg") ||
 	    g_str_has_suffix (art_file_path, "jpg")) {
+		GError *local_error = NULL;
 		gboolean is_jpeg = FALSE;
 		gchar *sum1 = NULL;
 
@@ -787,7 +820,6 @@ get_heuristic (MediaArtType   type,
 		    (artist == NULL || g_strcmp0 (artist, " ") == 0)) {
 			GFile *art_file;
 			GFile *target_file;
-			GError *local_error = NULL;
 
 			g_debug ("Album art (JPEG) found in same directory being used:'%s'",
 			         art_file_path);
@@ -814,14 +846,13 @@ get_heuristic (MediaArtType   type,
 		                                        art_file_path,
 		                                        &sum1,
 		                                        TRUE,
-		                                        &is_jpeg)) {
+		                                        &is_jpeg,
+		                                        &local_error)) {
 			/* Avoid duplicate artwork for each track in an album */
 			media_art_get_path (NULL,
 			                    title_stripped,
 			                    media_art_type_name [type],
-			                    NULL,
-			                    &album_art_file_path,
-			                    NULL);
+			                    &album_art_file_path);
 
 			if (is_jpeg) {
 				gchar *sum2 = NULL;
@@ -832,7 +863,8 @@ get_heuristic (MediaArtType   type,
 				                                 album_art_file_path,
 				                                 &sum2,
 				                                 FALSE,
-				                                 NULL)) {
+				                                 NULL,
+				                                 &local_error)) {
 					if (g_strcmp0 (sum1, sum2) == 0) {
 						/* If album-space-md5.jpg is the same as found,
 						 * make a symlink */
@@ -842,16 +874,16 @@ get_heuristic (MediaArtType   type,
 							g_set_error (error,
 							             media_art_error_quark (),
 							             MEDIA_ART_ERROR_SYMLINK_FAILED,
-							             "Could not link '%s' to '%s': %s",
+							             "Could not symlink '%s' to '%s', %s",
 							             album_art_file_path,
 							             target,
 							             g_strerror (errno));
 						}
 
-						g_debug ("symlink(%s, %s) error: %s",
+						g_debug ("symlink('%s' --> '%s'), %s",
 						         album_art_file_path,
 						         target,
-						         g_strerror (errno));
+						         !retval ? g_strerror (errno) : "no error given");
 					} else {
 						GFile *art_file;
 						GFile *target_file;
@@ -866,7 +898,11 @@ get_heuristic (MediaArtType   type,
 						                      NULL,
 						                      NULL,
 						                      NULL,
-						                      error);
+						                      &local_error);
+
+						if (local_error) {
+							g_propagate_error (error, local_error);
+						}
 
 						g_object_unref (art_file);
 						g_object_unref (target_file);
@@ -876,6 +912,8 @@ get_heuristic (MediaArtType   type,
 				} else {
 					GFile *art_file;
 					GFile *album_art_file;
+
+					g_clear_error (&local_error);
 
 					/* If there's not yet a album-space-md5.jpg, make one,
 					 * and symlink album-md5-md5.jpg to it */
@@ -887,24 +925,26 @@ get_heuristic (MediaArtType   type,
 					                      NULL,
 					                      NULL,
 					                      NULL,
-					                      error);
+					                      &local_error);
 
-					if (retval) {
+					if (local_error) {
+						g_propagate_error (error, local_error);
+					} else {
 						retval = symlink (album_art_file_path, target) == 0;
 
 						if (!retval) {
 							g_set_error (error,
 							             media_art_error_quark (),
 							             MEDIA_ART_ERROR_SYMLINK_FAILED,
-							             "Could not link '%s' to '%s': %s",
+							             "Could not symlink '%s' to '%s', %s",
 							             album_art_file_path,
 							             target,
 							             g_strerror (errno));
 						}
 
-						g_debug ("symlink(%s, %s) error: %s",
+						g_debug ("symlink('%s' --> '%s'), %s",
 						         album_art_file_path, target,
-						         g_strerror (errno));
+						         !retval ? g_strerror (errno) : "no error given");
 					}
 
 					g_object_unref (album_art_file);
@@ -922,6 +962,7 @@ get_heuristic (MediaArtType   type,
 			g_free (sum1);
 		} else {
 			/* Can't read contents of the cover.jpg file ... */
+			g_propagate_error (error, local_error);
 			retval = FALSE;
 		}
 	} else if (g_str_has_suffix (art_file_path, "png")) {
@@ -929,9 +970,7 @@ get_heuristic (MediaArtType   type,
 			media_art_get_path (NULL,
 			                    title_stripped,
 			                    media_art_type_name[type],
-			                    NULL,
-			                    &album_art_file_path,
-			                    NULL);
+			                    &album_art_file_path);
 		}
 
 		g_debug ("Album art (PNG) found in same directory being used:'%s'", art_file_path);
@@ -984,7 +1023,8 @@ media_art_set (const unsigned char  *buffer,
                const gchar          *title,
                GError              **error)
 {
-	gchar *local_path;
+	GError *local_error = NULL;
+	gchar *artist_path;
 	gchar *album_path;
 	gchar *md5_album = NULL;
 	gchar *md5_tmp = NULL;
@@ -992,12 +1032,11 @@ media_art_set (const unsigned char  *buffer,
 	gboolean retval = FALSE;
 
 	g_return_val_if_fail (type > MEDIA_ART_NONE && type < MEDIA_ART_TYPE_COUNT, FALSE);
-	g_return_val_if_fail (artist != NULL, FALSE);
 	g_return_val_if_fail (title != NULL, FALSE);
 
 	/* What we do here:
 	 *
-	 * NOTE: local_path is the final location for the media art
+	 * NOTE: artist_path is the final location for the media art
 	 * always here.
 	 *
 	 * 1. Get details based on artist and title.
@@ -1005,15 +1044,15 @@ media_art_set (const unsigned char  *buffer,
 	 *       i) save buffer to jpeg only.
 	 * 3. If no cache for ALBUM!:
 	 *       i) save buffer to jpeg.
-	 *      ii) symlink to local_path.
+	 *      ii) symlink to artist_path.
 	 * 4. If buffer is jpeg:
 	 *       i) If the MD5sum is the same for buffer and existing
-	 *          file, symlink to local_path.
-	 *      ii) Otherwise, save buffer to jpeg and call it local_path.
+	 *          file, symlink to artist_path.
+	 *      ii) Otherwise, save buffer to jpeg and call it artist_path.
 	 * 5. If buffer is not jpeg, save to disk:
 	 *       i) Compare to existing md5sum cache for ALBUM.
-	 *      ii) If same, unlink new jpeg from buffer and symlink to local_path.
-	 *     iii) If not same, rename new buffer to local_path.
+	 *      ii) If same, unlink new jpeg from buffer and symlink to artist_path.
+	 *     iii) If not same, rename new buffer to artist_path.
 	 *      iv) If we couldn't save the buffer or read from the new
 	 *          cache, unlink it...
 	 */
@@ -1022,83 +1061,99 @@ media_art_set (const unsigned char  *buffer,
 	media_art_get_path (artist,
 	                    title,
 	                    media_art_type_name[type],
-	                    NULL,
-	                    &local_path,
-	                    NULL);
+	                    &artist_path);
 
 	/* 2. If not ALBUM! or artist is unknown:
 	 *       i) save buffer to jpeg only.
 	 */
 	if (type != MEDIA_ART_ALBUM || (artist == NULL || g_strcmp0 (artist, " ") == 0)) {
-		retval = media_art_buffer_to_jpeg (buffer, len, mime, local_path, error);
-		g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s'", len, local_path);
-		g_free (local_path);
+		retval = media_art_buffer_to_jpeg (buffer, len, mime, artist_path, &local_error);
+
+		g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s', %s",
+		         len,
+		         artist_path,
+		         local_error ? local_error->message : "no error given");
+		g_free (artist_path);
+
+		if (local_error) {
+			g_propagate_error (error, local_error);
+			return FALSE;
+		}
 
 		return retval;
 	}
 
 	/* 3. If no cache for ALBUM!:
 	 *       i) save buffer to jpeg.
-	 *      ii) symlink to local_path.
+	 *      ii) symlink to artist_path.
 	 */
 	media_art_get_path (NULL,
 	                    title,
 	                    media_art_type_name[type],
-	                    NULL,
-	                    &album_path,
-	                    NULL);
+	                    &album_path);
 
 	if (!g_file_test (album_path, G_FILE_TEST_EXISTS)) {
-		retval = TRUE;
+		media_art_buffer_to_jpeg (buffer, len, mime, album_path, &local_error);
 
-		if (media_art_buffer_to_jpeg (buffer, len, mime, album_path, error)) {
-			g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s'", len, album_path);
+		g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s', %s",
+		         len,
+		         artist_path,
+		         local_error ? local_error->message : "no error given");
 
+		if (local_error) {
+			g_propagate_error (error, local_error);
+			retval = FALSE;
+		} else {
 			/* If album-space-md5.jpg doesn't
 			 * exist, make one and make a symlink
 			 * to album-md5-md5.jpg
 			 */
-			retval = symlink (album_path, local_path) == 0;
+			retval = symlink (album_path, artist_path) == 0;
 
 			if (!retval) {
 				g_set_error (error,
 				             media_art_error_quark (),
 				             MEDIA_ART_ERROR_SYMLINK_FAILED,
-				             "Could not link '%s' to '%s': %s",
+				             "Could not symlink '%s' to '%s', %s",
 				             album_path,
-				             local_path,
+				             artist_path,
 				             g_strerror (errno));
 			}
 
 			g_debug ("Creating symlink '%s' --> '%s', %s",
 			         album_path,
-			         local_path,
+			         artist_path,
 			         retval ? g_strerror (errno) : "no error given");
 		}
 
 		g_free (album_path);
-		g_free (local_path);
+		g_free (artist_path);
 
 		return retval;
 	}
 
-	if (!file_get_checksum_if_exists (G_CHECKSUM_MD5,
-	                                  album_path,
-	                                  &md5_album,
-	                                  FALSE,
-	                                  NULL)) {
-		g_debug ("No MD5 checksum found for album path:'%s'", album_path);
+	file_get_checksum_if_exists (G_CHECKSUM_MD5,
+	                             album_path,
+	                             &md5_album,
+	                             FALSE,
+	                             NULL,
+	                             &local_error);
+
+	if (local_error) {
+		g_debug ("%s", local_error->message);
+		g_propagate_error (error, local_error);
 
 		g_free (album_path);
-		g_free (local_path);
+		g_free (artist_path);
 
+		/* FIXME: Is it right to return TRUE here ?*/
 		return TRUE;
 	}
 
 	/* 4. If buffer is jpeg:
 	 *       i) If the MD5sum is the same for buffer and existing
-	 *          file, symlink to local_path.
-	 *      ii) Otherwise, save buffer to jpeg and call it local_path.
+	 *          file, symlink to artist_path.
+	 *      ii) Otherwise, save buffer to jpeg and call it artist_path.
 	 */
 	if (is_buffer_jpeg (mime, buffer, len)) {
 		gchar *md5_data;
@@ -1109,107 +1164,131 @@ media_art_set (const unsigned char  *buffer,
 		 * a symlink to album-md5-md5.jpg
 		 */
 		if (g_strcmp0 (md5_data, md5_album) == 0) {
-			retval = symlink (album_path, local_path) == 0;
+			retval = symlink (album_path, artist_path) == 0;
 
 			if (!retval) {
 				g_set_error (error,
 				             media_art_error_quark (),
 				             MEDIA_ART_ERROR_SYMLINK_FAILED,
-				             "Could not link '%s' to '%s': %s",
+				             "Could not symlink '%s' to '%s', %s",
 				             album_path,
-				             local_path,
+				             artist_path,
 				             g_strerror (errno));
 			}
 
 			g_debug ("Creating symlink '%s' --> '%s', %s",
 			         album_path,
-			         local_path,
+			         artist_path,
 			         retval ? g_strerror (errno) : "no error given");
 		} else {
 			/* If album-space-md5.jpg isn't the same as
 			 * buffer, make a new album-md5-md5.jpg
 			 */
-			retval = media_art_buffer_to_jpeg (buffer, len, mime, local_path, error);
-			g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s'", len, local_path);
+			retval = media_art_buffer_to_jpeg (buffer, len, mime, artist_path, &local_error);
+
+			g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s', %s",
+			         len,
+			         artist_path,
+			         local_error ? local_error->message : "no error given");
+
+			if (local_error) {
+				g_propagate_error (error, local_error);
+				retval = FALSE;
+			}
 		}
 
 		g_free (md5_data);
 		g_free (album_path);
-		g_free (local_path);
+		g_free (artist_path);
 
 		return retval;
 	}
 
 	/* 5. If buffer is not jpeg:
 	 *       i) Compare to existing md5sum data with cache for ALBUM.
-	 *      ii) If same, unlink new jpeg from buffer and symlink to local_path.
-	 *     iii) If not same, rename new buffer to local_path.
+	 *      ii) If same, unlink new jpeg from buffer and symlink to artist_path.
+	 *     iii) If not same, rename new buffer to artist_path.
 	 *      iv) If we couldn't save the buffer or read from the new
 	 *          cache, unlink it...
 	 */
 	temp = g_strdup_printf ("%s-tmp", album_path);
+	media_art_buffer_to_jpeg (buffer, len, mime, temp, &local_error);
 
-	/* If buffer isn't a JPEG */
-	if (!media_art_buffer_to_jpeg (buffer, len, mime, temp, error)) {
-		/* Can't read temp file ... */
+	g_debug ("Saving buffer to jpeg (%ld bytes) --> '%s', %s",
+	         len,
+	         artist_path,
+	         local_error ? local_error->message : "no error given");
+
+	if (local_error) {
+		g_propagate_error (error, local_error);
+
+		/* Unlink in case there was some error and half the
+		 * job was done. */
 		g_unlink (temp);
 
 		g_free (temp);
 		g_free (md5_album);
 		g_free (album_path);
-		g_free (local_path);
+		g_free (artist_path);
 
 		return FALSE;
 	}
 
-	if (file_get_checksum_if_exists (G_CHECKSUM_MD5,
-	                                 temp,
-	                                 &md5_tmp,
-	                                 FALSE,
-	                                 NULL)) {
+	file_get_checksum_if_exists (G_CHECKSUM_MD5,
+	                             temp,
+	                             &md5_tmp,
+	                             FALSE,
+	                             NULL,
+	                             &local_error);
+
+	if (!local_error) {
 		if (g_strcmp0 (md5_tmp, md5_album) == 0) {
 			/* If album-space-md5.jpg is the same as
 			 * buffer, make a symlink to album-md5-md5.jpg
 			 */
-			retval = symlink (album_path, local_path) == 0;
+			retval = symlink (album_path, artist_path) == 0;
 
 			if (!retval) {
 				g_set_error (error,
 				             media_art_error_quark (),
 				             MEDIA_ART_ERROR_SYMLINK_FAILED,
-				             "Could not link '%s' to '%s': %s",
+				             "Could not symlink '%s' to '%s', %s",
 				             album_path,
-				             local_path,
+				             artist_path,
 				             g_strerror (errno));
 			}
 
 			g_debug ("Creating symlink '%s' --> '%s', %s",
 			         album_path,
-			         local_path,
+			         artist_path,
 			         retval ? g_strerror (errno) : "no error given");
 		} else {
 			/* If album-space-md5.jpg isn't the same as
 			 * buffer, make a new album-md5-md5.jpg
 			 */
-			retval = g_rename (temp, local_path) == 0;
+			retval = g_rename (temp, artist_path) == 0;
 
 			if (!retval) {
 				g_set_error (error,
 				             media_art_error_quark (),
 				             MEDIA_ART_ERROR_RENAME_FAILED,
-				             "Could not rename '%s' to '%s': %s",
+				             "Could not rename '%s' to '%s', %s",
 				             temp,
-				             local_path,
+				             artist_path,
 				             g_strerror (errno));
 			}
 
 			g_debug ("Renaming temp file '%s' --> '%s', %s",
 			         temp,
-			         local_path,
+			         artist_path,
 			         retval ? g_strerror (errno) : "no error given");
 		}
 
 		g_free (md5_tmp);
+	} else {
+		g_debug ("%s", local_error->message);
+		g_propagate_error (error, local_error);
+		retval = FALSE;
 	}
 
 	/* Clean up */
@@ -1218,14 +1297,13 @@ media_art_set (const unsigned char  *buffer,
 
 	g_free (md5_album);
 	g_free (album_path);
-	g_free (local_path);
+	g_free (artist_path);
 
 	return retval;
 }
 
 static FileInfo *
 file_info_new (MediaArtProcess *process,
-               const gchar     *local_uri,
                const gchar     *art_path)
 {
 	FileInfo *fi;
@@ -1233,7 +1311,6 @@ file_info_new (MediaArtProcess *process,
 	fi = g_slice_new (FileInfo);
 
 	fi->process = g_object_ref (process);
-	fi->local_uri = g_strdup (local_uri);
 	fi->art_path = g_strdup (art_path);
 
 	return fi;
@@ -1246,7 +1323,6 @@ file_info_free (FileInfo *fi)
 		return;
 	}
 
-	g_free (fi->local_uri);
 	g_free (fi->art_path);
 	g_object_unref (fi->process);
 
@@ -1258,7 +1334,6 @@ media_art_request_download (MediaArtProcess *process,
                             MediaArtType     type,
                             const gchar     *album,
                             const gchar     *artist,
-                            const gchar     *local_uri,
                             const gchar     *art_path)
 {
 	MediaArtProcessPrivate *private;
@@ -1276,7 +1351,7 @@ media_art_request_download (MediaArtProcess *process,
 			return;
 		}
 
-		info = file_info_new (process, local_uri, art_path);
+		info = file_info_new (process, art_path);
 
 		g_dbus_connection_call (private->connection,
 		                        ALBUMARTER_SERVICE,
@@ -1294,70 +1369,6 @@ media_art_request_download (MediaArtProcess *process,
 		                        NULL,
 		                        media_art_queue_cb,
 		                        info);
-	}
-}
-
-static void
-media_art_copy_to_local (MediaArtProcess *process,
-                         const gchar     *filename,
-                         const gchar     *local_uri)
-{
-	MediaArtProcessPrivate *private;
-	GSList *roots, *l;
-	gboolean on_removable_device = FALSE;
-	guint flen;
-
-	private = media_art_process_get_instance_private (process);
-
-	roots = storage_get_device_roots (private->storage, STORAGE_REMOVABLE, FALSE);
-	flen = strlen (filename);
-
-	for (l = roots; l; l = l->next) {
-		guint len;
-
-		len = strlen (l->data);
-
-		if (flen >= len && strncmp (filename, l->data, len)) {
-			on_removable_device = TRUE;
-			break;
-		}
-	}
-
-	g_slist_foreach (roots, (GFunc) g_free, NULL);
-	g_slist_free (roots);
-
-	if (on_removable_device) {
-		GFile *local_file, *from;
-
-		from = g_file_new_for_path (filename);
-		local_file = g_file_new_for_uri (local_uri);
-
-		/* We don't try to overwrite, but we also ignore all errors.
-		 * Such an error could be that the removable device is
-		 * read-only. Well that's fine then ... ignore */
-
-		if (!g_file_query_exists (local_file, NULL)) {
-			GFile *dirf;
-
-			dirf = g_file_get_parent (local_file);
-			if (dirf) {
-				/* Parent file may not exist, as if the file is in the
-				 * root of a gvfs mount. In this case we won't try to
-				 * create the parent directory, just try to copy the
-				 * file there. */
-				g_file_make_directory_with_parents (dirf, NULL, NULL);
-				g_object_unref (dirf);
-			}
-
-			g_debug ("Copying media art from:'%s' to:'%s'",
-			         filename, local_uri);
-
-			g_file_copy_async (from, local_file, 0, 0,
-			                   NULL, NULL, NULL, NULL, NULL);
-		}
-
-		g_object_unref (local_file);
-		g_object_unref (from);
 	}
 }
 
@@ -1386,16 +1397,10 @@ media_art_queue_cb (GObject      *source_object,
 		g_clear_error (&error);
 	}
 
+	/* Do something with downloaded content, e.g. create symlink to actual cache? */
+
 	if (v) {
 		g_variant_unref (v);
-	}
-
-	if (private->storage &&
-	    fi->art_path &&
-	    g_file_test (fi->art_path, G_FILE_TEST_EXISTS)) {
-		media_art_copy_to_local (fi->process,
-		                         fi->art_path,
-		                         fi->local_uri);
 	}
 
 	file_info_free (fi);
@@ -1489,6 +1494,113 @@ get_heuristic_for_parent_path (GFile        *file,
 	return key;
 }
 
+static ProcessData *
+process_data_new (MediaArtType          type,
+                  MediaArtProcessFlags  flags,
+                  GFile                *file,
+                  const gchar          *uri,
+                  const unsigned char  *buffer,
+                  size_t                len,
+                  const gchar          *mime,
+                  const gchar          *artist,
+                  const gchar          *title)
+{
+	ProcessData *data;
+
+	data = g_slice_new0 (ProcessData);
+	data->type = type;
+	data->flags = flags;
+
+	if (file) {
+		data->file = g_object_ref (file);
+	}
+
+	data->uri = g_strdup (uri);
+
+	data->buffer = g_memdup (buffer, data->len);
+	data->len = len;
+	data->mime = g_strdup (mime);
+
+	data->artist = g_strdup (artist);
+	data->title = g_strdup (title);
+
+	return data;
+}
+
+static void
+process_data_free (ProcessData *data)
+{
+	if (!data) {
+		return;
+	}
+
+	if (data->file) {
+		g_object_unref (data->file);
+	}
+
+	g_free (data->uri);
+
+	g_free (data->buffer);
+	g_free (data->mime);
+
+	g_free (data->artist);
+	g_free (data->title);
+
+	g_slice_free (ProcessData, data);
+}
+
+static void
+process_thread (GTask        *task,
+		gpointer      source_object,
+		gpointer      task_data,
+		GCancellable *cancellable)
+{
+	MediaArtProcess *process = MEDIA_ART_PROCESS (source_object);
+	ProcessData *data = task_data;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	if (!g_cancellable_set_error_if_cancelled (cancellable, &error)) {
+		if (data->file) {
+			success = media_art_process_file (process,
+			                                  data->type,
+			                                  data->flags,
+			                                  data->file,
+			                                  data->artist,
+			                                  data->title,
+			                                  cancellable,
+			                                  &error);
+		} else if (data->uri) {
+			success = media_art_process_uri (process,
+			                                 data->type,
+			                                 data->flags,
+			                                 data->uri,
+			                                 data->artist,
+			                                 data->title,
+			                                 cancellable,
+			                                 &error);
+		} else {
+			success = media_art_process_buffer (process,
+			                                    data->type,
+			                                    data->flags,
+			                                    data->file,
+			                                    data->buffer,
+			                                    data->len,
+			                                    data->mime,
+			                                    data->artist,
+			                                    data->title,
+			                                    cancellable,
+			                                    &error);
+		}
+	}
+
+	if (error) {
+		g_task_return_error (task, error);
+	} else {
+		g_task_return_boolean (task, success);
+	}
+}
+
 /**
  * media_art_process_buffer:
  * @process: Media art process object
@@ -1497,10 +1609,13 @@ get_heuristic_for_parent_path (GFile        *file,
  * @related_file: File related to the media art
  * @buffer: (array length=len)(allow-none): a buffer containing @file data, or %NULL
  * @len: length of @buffer, or 0
- * @mime: MIME type of @buffer, or %NULL
+ * @mime: (allow-none): MIME type of @buffer, or %NULL
  * @artist: (allow-none): The artist name @file or %NULL
  * @title: (allow-none): The title for @file or %NULL
- * @error: Pointer to potential GLib / MediaArt error, or %NULL
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
+ * @error: a #GError location to store the error occurring, or %NULL
+ * to ignore.
  *
  * Processes a memory buffer represented by @buffer and @len. If you
  * have extracted any embedded media art and passed this in as
@@ -1526,9 +1641,10 @@ media_art_process_buffer (MediaArtProcess       *process,
                           const gchar           *mime,
                           const gchar           *artist,
                           const gchar           *title,
+                          GCancellable          *cancellable,
                           GError               **error)
 {
-	GFile *cache_art_file, *local_art_file;
+	GFile *cache_art_file;
 	GError *local_error = NULL;
 	gchar *cache_art_path, *uri;
 	gboolean processed, created;
@@ -1567,11 +1683,14 @@ media_art_process_buffer (MediaArtProcess       *process,
 	media_art_get_file (artist,
 	                    title,
 	                    media_art_type_name[type],
-	                    related_file,
-	                    &cache_art_file,
-	                    &local_art_file);
+	                    &cache_art_file);
 
 	cache_mtime = get_mtime (cache_art_file, &local_error);
+
+	if (g_cancellable_set_error_if_cancelled (cancellable, error)) {
+		g_free (uri);
+		return FALSE;
+	}
 
 	if (local_error &&
 	    local_error->domain == g_io_error_quark () &&
@@ -1595,15 +1714,10 @@ media_art_process_buffer (MediaArtProcess       *process,
 		         local_error->message);
 		g_free (uri);
 
-		if (local_art_file) {
-			g_object_unref (local_art_file);
-		}
-
 		g_propagate_error (error, local_error);
 
 		return FALSE;
 	}
-
 
 	cache_art_path = g_file_get_path (cache_art_file);
 
@@ -1618,31 +1732,106 @@ media_art_process_buffer (MediaArtProcess       *process,
 		processed = TRUE;
 	}
 
-	if (local_art_file && !g_file_query_exists (local_art_file, NULL)) {
-		/* We can't reuse art_exists here because the
-		 * situation might have changed
-		 */
-		if (g_file_query_exists (cache_art_file, NULL)) {
-			gchar *local_art_uri;
-
-			local_art_uri = g_file_get_uri (local_art_file);
-			media_art_copy_to_local (process, cache_art_path, local_art_uri);
-			g_free (local_art_uri);
-		}
-	}
-
 	if (cache_art_file) {
 		g_object_unref (cache_art_file);
-	}
-
-	if (local_art_file) {
-		g_object_unref (local_art_file);
 	}
 
 	g_free (cache_art_path);
 	g_free (uri);
 
+	if (g_cancellable_is_cancelled (cancellable)) {
+		processed = FALSE;
+	}
+
 	return processed;
+}
+
+/**
+ * media_art_process_buffer_async:
+ * @process: Media art process object
+ * @type: The type of media
+ * @flags: The options given for how to process the media art
+ * @related_file: File related to the media art
+ * @buffer: (array length=len)(allow-none): a buffer containing @file
+ * data, or %NULL
+ * @len: length of @buffer, or 0
+ * @mime: MIME type of @buffer, or %NULL
+ * @artist: (allow-none): The artist name @file or %NULL
+ * @title: (allow-none): The title for @file or %NULL
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the
+ * request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Processes media art. Precisely the same operation as
+ * media_art_process_buffer() is performing, but asynchronously.
+ *
+ * When all i/o for the operation is finished the @callback will be
+ * called.
+ *
+ * In case of a partial error the callback will be called with any
+ * succeeding items and no error, and on the next request the error
+ * will be reported. If a request is cancelled the callback will be
+ * called with %G_IO_ERROR_CANCELLED.
+ *
+ * Dbufferng an async request no other sync and async calls are allowed,
+ * and will result in %G_IO_ERROR_PENDING errors.
+ *
+ * Any outstanding i/o request with higher priority (lower numerical
+ * value) will be executed before an outstanding request with lower
+ * priority. Default priority is %G_PRIORITY_DEFAULT.
+ *
+ * Since: 0.7.0
+ */
+void
+media_art_process_buffer_async (MediaArtProcess      *process,
+                                MediaArtType          type,
+                                MediaArtProcessFlags  flags,
+                                GFile                *related_file,
+                                const guchar         *buffer,
+                                gsize                 len,
+                                const gchar          *mime,
+                                const gchar          *artist,
+                                const gchar          *title,
+                                gint                  io_priority,
+                                GCancellable         *cancellable,
+                                GAsyncReadyCallback   callback,
+                                gpointer              user_data)
+{
+	GTask *task;
+
+	task = g_task_new (process, cancellable, callback, user_data);
+	g_task_set_task_data (task, process_data_new (type, flags, related_file, NULL, buffer, len, mime, artist, title), (GDestroyNotify) process_data_free);
+	g_task_set_priority (task, io_priority);
+	g_task_run_in_thread (task, process_thread);
+	g_object_unref (task);
+}
+
+/**
+ * media_art_process_buffer_finish:
+ * @process: the #MediaArtProcess
+ * @result: a #GAsyncResult.
+ * @error: a #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Finishes the asynchronous operation started with
+ * media_art_process_file_async().
+ *
+ * Returns: %TRUE on success, otherwise %FALSE when @error will be set.
+ *
+ * Since: 0.7.0
+ **/
+gboolean
+media_art_process_buffer_finish (MediaArtProcess  *process,
+                                 GAsyncResult     *result,
+                                 GError          **error)
+{
+	g_return_val_if_fail (g_task_is_valid (result, process), FALSE);
+
+	return g_task_propagate_boolean (G_TASK (result), error);
+
 }
 
 /**
@@ -1653,7 +1842,10 @@ media_art_process_buffer (MediaArtProcess       *process,
  * @file: File to be processed
  * @artist: (allow-none): The artist name @file or %NULL
  * @title: (allow-none): The title for @file or %NULL
- * @error: Pointer to potential GLib / MediaArt error, or %NULL
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
+ * @error: a #GError location to store the error occurring, or %NULL
+ * to ignore.
  *
  * Process @file and check if media art exists and if it is up to date
  * with @artist and @title provided. Either @artist OR @title can be
@@ -1694,10 +1886,11 @@ media_art_process_file (MediaArtProcess       *process,
                         GFile                 *file,
                         const gchar           *artist,
                         const gchar           *title,
+                        GCancellable          *cancellable,
                         GError               **error)
 {
 	MediaArtProcessPrivate *private;
-	GFile *cache_art_file, *local_art_file;
+	GFile *cache_art_file;
 	GError *local_error = NULL;
 	gchar *cache_art_path, *uri;
 	gboolean no_cache_or_old;
@@ -1729,12 +1922,15 @@ media_art_process_file (MediaArtProcess       *process,
 		return FALSE;
 	}
 
+	if (g_cancellable_set_error_if_cancelled (cancellable, error)) {
+		g_free (uri);
+		return FALSE;
+	}
+
 	media_art_get_file (artist,
 	                    title,
 	                    media_art_type_name[type],
-	                    file,
-	                    &cache_art_file,
-	                    &local_art_file);
+	                    &cache_art_file);
 
 	cache_art_path = g_file_get_path (cache_art_file);
 
@@ -1748,32 +1944,31 @@ media_art_process_file (MediaArtProcess       *process,
 		key = get_heuristic_for_parent_path (file, type, artist, title);
 
 		if (!g_hash_table_lookup (private->media_art_cache, key)) {
-			gchar *local_art_uri;
+			/* Check we're not cancelled before
+			 * potentially trying a download operation.
+			 */
+			if (!g_cancellable_set_error_if_cancelled (cancellable, error)) {
+				if (!get_heuristic (type, uri, artist, title, error)) {
+					/* If the heuristic failed, we
+					 * request the download the
+					 * media-art to the media-art
+					 * downloaders
+					 */
+					media_art_request_download (process,
+					                            type,
+					                            artist,
+					                            title,
+					                            cache_art_path);
 
-			local_art_uri = g_file_get_uri (local_art_file);
+					/* FIXME: Should return TRUE or FALSE? */
+				}
 
-			if (!get_heuristic (type, uri, local_art_uri, artist, title, error)) {
-				/* If the heuristic failed, we
-				 * request the download the
-				 * media-art to the media-art
-				 * downloaders
-				 */
-				media_art_request_download (process,
-				                            type,
-				                            artist,
-				                            title,
-				                            local_art_uri,
-				                            cache_art_path);
+				set_mtime (cache_art_path, mtime);
 
-				/* FIXME: Should return TRUE or FALSE? */
+				g_hash_table_insert (private->media_art_cache,
+				                     key,
+				                     GINT_TO_POINTER(TRUE));
 			}
-
-			set_mtime (cache_art_path, mtime);
-
-			g_hash_table_insert (private->media_art_cache,
-			                     key,
-			                     GINT_TO_POINTER(TRUE));
-			g_free (local_art_uri);
 		} else {
 			g_free (key);
 		}
@@ -1787,14 +1982,92 @@ media_art_process_file (MediaArtProcess       *process,
 		g_object_unref (cache_art_file);
 	}
 
-	if (local_art_file) {
-		g_object_unref (local_art_file);
-	}
-
 	g_free (cache_art_path);
 	g_free (uri);
 
-	return TRUE;
+	return !g_cancellable_is_cancelled (cancellable);
+}
+
+
+/**
+ * media_art_process_file_async:
+ * @process: Media art process object
+ * @type: The type of media
+ * @flags: The options given for how to process the media art
+ * @file: File to be processed
+ * @artist: (allow-none): The artist name @file or %NULL
+ * @title: (allow-none): The title for @file or %NULL
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the
+ * request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Processes media art. Precisely the same operation as
+ * media_art_process_file() is performing, but asynchronously.
+ *
+ * When all i/o for the operation is finished the @callback will be
+ * called.
+ *
+ * In case of a partial error the callback will be called with any
+ * succeeding items and no error, and on the next request the error
+ * will be reported. If a request is cancelled the callback will be
+ * called with %G_IO_ERROR_CANCELLED.
+ *
+ * During an async request no other sync and async calls are allowed,
+ * and will result in %G_IO_ERROR_PENDING errors.
+ *
+ * Any outstanding i/o request with higher priority (lower numerical
+ * value) will be executed before an outstanding request with lower
+ * priority. Default priority is %G_PRIORITY_DEFAULT.
+ *
+ * Since: 0.7.0
+ */
+void
+media_art_process_file_async (MediaArtProcess      *process,
+                              MediaArtType          type,
+                              MediaArtProcessFlags  flags,
+                              GFile                *file,
+                              const gchar          *artist,
+                              const gchar          *title,
+                              gint                  io_priority,
+                              GCancellable         *cancellable,
+                              GAsyncReadyCallback   callback,
+                              gpointer              user_data)
+{
+	GTask *task;
+
+	task = g_task_new (process, cancellable, callback, user_data);
+	g_task_set_task_data (task, process_data_new (type, flags, file, NULL, NULL, 0, NULL, artist, title), (GDestroyNotify) process_data_free);
+	g_task_set_priority (task, io_priority);
+	g_task_run_in_thread (task, process_thread);
+	g_object_unref (task);
+}
+
+/**
+ * media_art_process_file_finish:
+ * @process: the #MediaArtProcess
+ * @result: a #GAsyncResult.
+ * @error: a #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Finishes the asynchronous operation started with
+ * media_art_process_file_async().
+ *
+ * Returns: %TRUE on success, otherwise %FALSE when @error will be set.
+ *
+ * Since: 0.7.0
+ **/
+gboolean
+media_art_process_file_finish (MediaArtProcess  *process,
+                               GAsyncResult     *result,
+                               GError          **error)
+{
+	g_return_val_if_fail (g_task_is_valid (result, process), FALSE);
+
+	return g_task_propagate_boolean (G_TASK (result), error);
+
 }
 
 /**
@@ -1805,6 +2078,8 @@ media_art_process_file (MediaArtProcess       *process,
  * @uri: URI of the media file that contained the data
  * @artist: (allow-none): The artist name @uri or %NULL
  * @title: (allow-none): The title for @uri or %NULL
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
  * @error: Pointer to potential GLib / MediaArt error, or %NULL
  *
  * This function calls media_art_process_file(), but takes the @uri as
@@ -1822,6 +2097,7 @@ media_art_process_uri (MediaArtProcess       *process,
                        const gchar           *uri,
                        const gchar           *artist,
                        const gchar           *title,
+                       GCancellable          *cancellable,
                        GError               **error)
 {
 	GFile *file;
@@ -1840,9 +2116,91 @@ media_art_process_uri (MediaArtProcess       *process,
 	                                 file,
 	                                 artist,
 	                                 title,
+	                                 cancellable,
 	                                 error);
 
 	g_object_unref (file);
 
 	return result;
+}
+
+/**
+ * media_art_process_uri_async:
+ * @process: Media art process object
+ * @type: The type of media
+ * @flags: The options given for how to process the media art
+ * @uri: A string representing a URI to be processed
+ * @artist: (allow-none): The artist name @file or %NULL
+ * @title: (allow-none): The title for @file or %NULL
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * ignore
+ * @callback: (scope async): a #GAsyncReadyCallback to call when the
+ * request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Processes media art. Precisely the same operation as
+ * media_art_process_uri() is performing, but asynchronously.
+ *
+ * When all i/o for the operation is finished the @callback will be
+ * called.
+ *
+ * In case of a partial error the callback will be called with any
+ * succeeding items and no error, and on the next request the error
+ * will be reported. If a request is cancelled the callback will be
+ * called with %G_IO_ERROR_CANCELLED.
+ *
+ * During an async request no other sync and async calls are allowed,
+ * and will result in %G_IO_ERROR_PENDING errors.
+ *
+ * Any outstanding i/o request with higher priority (lower numerical
+ * value) will be executed before an outstanding request with lower
+ * priority. Default priority is %G_PRIORITY_DEFAULT.
+ *
+ * Since: 0.7.0
+ */
+void
+media_art_process_uri_async (MediaArtProcess      *process,
+                             MediaArtType          type,
+                             MediaArtProcessFlags  flags,
+                             const gchar          *uri,
+                             const gchar          *artist,
+                             const gchar          *title,
+                             gint                  io_priority,
+                             GCancellable         *cancellable,
+                             GAsyncReadyCallback   callback,
+                             gpointer              user_data)
+{
+	GTask *task;
+
+	task = g_task_new (process, cancellable, callback, user_data);
+	g_task_set_task_data (task, process_data_new (type, flags, NULL, uri, NULL, 0, NULL, artist, title), (GDestroyNotify) process_data_free);
+	g_task_set_priority (task, io_priority);
+	g_task_run_in_thread (task, process_thread);
+	g_object_unref (task);
+}
+
+/**
+ * media_art_process_uri_finish:
+ * @process: the #MediaArtProcess
+ * @result: a #GAsyncResult.
+ * @error: a #GError location to store the error occurring, or %NULL
+ * to ignore.
+ *
+ * Finishes the asynchronous operation started with
+ * media_art_process_file_async().
+ *
+ * Returns: %TRUE on success, otherwise %FALSE when @error will be set.
+ *
+ * Since: 0.7.0
+ **/
+gboolean
+media_art_process_uri_finish (MediaArtProcess  *process,
+                              GAsyncResult     *result,
+                              GError          **error)
+{
+	g_return_val_if_fail (g_task_is_valid (result, process), FALSE);
+
+	return g_task_propagate_boolean (G_TASK (result), error);
+
 }

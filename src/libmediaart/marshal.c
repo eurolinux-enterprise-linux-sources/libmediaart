@@ -63,9 +63,9 @@ media_art_marshal_VOID__STRING_STRING (GClosure     *closure,
                                                     gpointer     arg_1,
                                                     gpointer     arg_2,
                                                     gpointer     data2);
-  register GMarshalFunc_VOID__STRING_STRING callback;
-  register GCClosure *cc = (GCClosure*) closure;
-  register gpointer data1, data2;
+  GMarshalFunc_VOID__STRING_STRING callback;
+  GCClosure *cc = (GCClosure*) closure;
+  gpointer data1, data2;
 
   g_return_if_fail (n_param_values == 3);
 
@@ -103,9 +103,9 @@ media_art_marshal_VOID__STRING_STRING_STRING_BOOLEAN_BOOLEAN (GClosure     *clos
                                                                            gboolean     arg_4,
                                                                            gboolean     arg_5,
                                                                            gpointer     data2);
-  register GMarshalFunc_VOID__STRING_STRING_STRING_BOOLEAN_BOOLEAN callback;
-  register GCClosure *cc = (GCClosure*) closure;
-  register gpointer data1, data2;
+  GMarshalFunc_VOID__STRING_STRING_STRING_BOOLEAN_BOOLEAN callback;
+  GCClosure *cc = (GCClosure*) closure;
+  gpointer data1, data2;
 
   g_return_if_fail (n_param_values == 6);
 

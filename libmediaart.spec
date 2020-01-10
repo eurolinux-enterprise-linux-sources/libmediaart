@@ -1,16 +1,21 @@
 Name:           libmediaart
-Version:        0.7.0
+Version:        1.9.1
 Release:        1%{?dist}
 Summary:        Library for managing media art caches
 
 License:        LGPLv2+
 URL:            https://github.com/curlybeast/libmediaart
-Source0:        https://download.gnome.org/sources/%{name}/0.7/%{name}-%{version}.tar.xz
+Source0:        https://download.gnome.org/sources/%{name}/1.9/%{name}-%{version}.tar.xz
 
 BuildRequires:  pkgconfig(glib-2.0) pkgconfig(gio-2.0) pkgconfig(gio-unix-2.0)
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0)
-BuildRequires:  vala-tools vala-devel
-
+BuildRequires:  pkgconfig(gobject-introspection-1.0)
+%if 0%{?fedora}
+# Test requires the jpeg gdk-pixbuf loader
+BuildRequires:  gdk-pixbuf2-modules
+%endif
+BuildRequires:  vala vala-devel
+BuildRequires:  xorg-x11-server-Xvfb dbus-x11
 
 %description
 Library tasked with managing, extracting and handling media art caches.
@@ -24,6 +29,14 @@ Requires:       %{name}%{?_isa} = %{version}-%{release}
 The %{name}-devel package contains libraries and header files for
 developing applications that use %{name}.
 
+%package  tests
+Summary:  Tests for the %{name} package
+Group:    Development/Libraries
+Requires: %{name}%{?_isa} = %{version}-%{release}
+
+%description tests
+The %{name}-tests package contains tests that can be used to verify
+the functionality of the installed %{name} package.
 
 %prep
 %setup -q
@@ -32,7 +45,8 @@ developing applications that use %{name}.
 %build
 %configure --disable-static \
   --enable-gdkpixbuf \
-  --disable-qt
+  --disable-qt \
+  --enable-installed-tests
 make %{?_smp_mflags}
 
 
@@ -40,9 +54,8 @@ make %{?_smp_mflags}
 %make_install
 find $RPM_BUILD_ROOT -name '*.la' -delete -print
 
-#check
-# requires X
-#make check
+%check
+xvfb-run make check
 
 %post -p /sbin/ldconfig
 
@@ -50,20 +63,34 @@ find $RPM_BUILD_ROOT -name '*.la' -delete -print
 
 
 %files
-%doc AUTHORS COPYING.LESSER NEWS
-%{_libdir}/libmediaart-1.0.so.*
-%{_libdir}/girepository-1.0/MediaArt-1.0.typelib
+%license COPYING.LESSER
+%doc AUTHORS NEWS
+%{_libdir}/libmediaart-2.0.so.*
+%{_libdir}/girepository-1.0/MediaArt-2.0.typelib
 
 %files devel
-%{_includedir}/libmediaart-1.0
-%{_libdir}/libmediaart-1.0.so
-%{_libdir}/pkgconfig/libmediaart-1.0.pc
-%{_datadir}/gir-1.0/MediaArt-1.0.gir
+%{_includedir}/libmediaart-2.0
+%{_libdir}/libmediaart-2.0.so
+%{_libdir}/pkgconfig/libmediaart-2.0.pc
+%{_datadir}/gir-1.0/MediaArt-2.0.gir
 %{_datadir}/gtk-doc/html/libmediaart
-%{_datadir}/vala/vapi/libmediaart-1.0.vapi
+%{_datadir}/vala/vapi/libmediaart-2.0.vapi
+
+%files tests
+%{_libexecdir}/installed-tests/libmediaart
+%{_datadir}/installed-tests
 
 
 %changelog
+* Thu Mar 09 2017 Kalev Lember <klember@redhat.com> - 1.9.1-1
+- Update to 1.9.1
+- Drop upstreamed patches
+- Resolves: #1387011
+
+* Thu Oct 20 2016 Kalev Lember <klember@redhat.com> - 1.9.0-1
+- Update to 1.9.0
+- Resolves: #1387011
+
 * Mon Sep 22 2014 Yanko Kaneti <yaneti@declera.com> - 0.7.0-1
 - Update to 0.7.0
 

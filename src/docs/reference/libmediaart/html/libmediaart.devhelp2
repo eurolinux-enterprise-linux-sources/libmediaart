@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<!DOCTYPE book PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "">
-<book xmlns="http://www.devhelp.net/book" title="libmediaart Library Reference Manual" link="index.html" author="" name="libmediaart" version="2" language="c">
+<book xmlns="http://www.devhelp.net/book" title="libmediaart Library Reference Manual" link="index.html" author="" name="libmediaart" version="2" language="c" online="http://library.gnome.org/devel/libmediaart/unstable/">
   <chapters>
     <sub name="Overview" link="overview.html">
       <sub name="Compiling applications" link="overview-compiling.html"/>
@@ -29,10 +28,24 @@
     <keyword type="function" name="media_art_get_path ()" link="libmediaart-Cache.html#media-art-get-path" since="0.2.0"/>
     <keyword type="function" name="media_art_get_file ()" link="libmediaart-Cache.html#media-art-get-file" since="0.2.0"/>
     <keyword type="function" name="media_art_remove ()" link="libmediaart-Cache.html#media-art-remove" since="0.2.0"/>
+    <keyword type="function" name="media_art_remove_async ()" link="libmediaart-Cache.html#media-art-remove-async" since="0.7.0"/>
+    <keyword type="function" name="media_art_remove_finish ()" link="libmediaart-Cache.html#media-art-remove-finish" since="0.7.0"/>
     <keyword type="function" name="media_art_strip_invalid_entities ()" link="libmediaart-Cache.html#media-art-strip-invalid-entities" since="0.2.0"/>
     <keyword type="function" name="media_art_plugin_init ()" link="libmediaart-Plugins.html#media-art-plugin-init" since="0.1.0"/>
     <keyword type="function" name="media_art_plugin_shutdown ()" link="libmediaart-Plugins.html#media-art-plugin-shutdown" since="0.1.0"/>
     <keyword type="function" name="media_art_file_to_jpeg ()" link="libmediaart-Plugins.html#media-art-file-to-jpeg" since="0.1.0"/>
     <keyword type="function" name="media_art_buffer_to_jpeg ()" link="libmediaart-Plugins.html#media-art-buffer-to-jpeg" since="0.1.0"/>
+    <keyword type="constant" name="MEDIA_ART_NONE" link="libmediaart-MediaArtProcess.html#MEDIA-ART-NONE:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ALBUM" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ALBUM:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_VIDEO" link="libmediaart-MediaArtProcess.html#MEDIA-ART-VIDEO:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ERROR_NO_STORAGE" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ERROR-NO-STORAGE:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ERROR_NO_TITLE" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ERROR-NO-TITLE:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ERROR_SYMLINK_FAILED" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ERROR-SYMLINK-FAILED:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ERROR_RENAME_FAILED" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ERROR-RENAME-FAILED:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_ERROR_NO_CACHE_DIR" link="libmediaart-MediaArtProcess.html#MEDIA-ART-ERROR-NO-CACHE-DIR:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_PROCESS_FLAGS_NONE" link="libmediaart-MediaArtProcess.html#MEDIA-ART-PROCESS-FLAGS-NONE:CAPS"/>
+    <keyword type="constant" name="MEDIA_ART_PROCESS_FLAGS_FORCE" link="libmediaart-MediaArtProcess.html#MEDIA-ART-PROCESS-FLAGS-FORCE:CAPS"/>
+    <keyword type="member" name="MediaArtProcess.parent" link="libmediaart-MediaArtProcess.html#MediaArtProcess.parent"/>
+    <keyword type="member" name="MediaArtProcessClass.parent" link="libmediaart-MediaArtProcess.html#MediaArtProcessClass.parent"/>
   </functions>
 </book>
